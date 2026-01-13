@@ -2,21 +2,29 @@ import { Link, useLocation } from 'react-router-dom';
 import { Building2, Users, Briefcase, DollarSign, LayoutDashboard, Menu, LogOut, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, updatePassword } = useAuth();
   const { language, setLanguage, t } = useLanguage();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ password: '', confirmPassword: '' });
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const navigation = [
     { name: t('nav.dashboard'), href: '/', icon: LayoutDashboard },
@@ -33,6 +41,44 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleOpenPasswordDialog = () => {
+    setPasswordForm({ password: '', confirmPassword: '' });
+    setPasswordDialogOpen(true);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordForm.password !== passwordForm.confirmPassword) {
+      toast({
+        title: 'Erro',
+        description: t('messages.passwordMismatch'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setSavingPassword(true);
+      const { error } = await updatePassword(passwordForm.password);
+      if (error) {
+        toast({
+          title: 'Erro',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+      toast({
+        title: 'Sucesso',
+        description: t('messages.passwordUpdated'),
+      });
+      setPasswordDialogOpen(false);
+      setPasswordForm({ password: '', confirmPassword: '' });
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   const SidebarContent = () => (
@@ -112,6 +158,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleOpenPasswordDialog}>
+                    {t('auth.changePassword')}
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     {t('auth.logout')}
@@ -136,6 +185,54 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </div>
+
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('auth.changePassword')}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">{t('auth.newPassword')}</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={passwordForm.password}
+                onChange={(e) => setPasswordForm({ ...passwordForm, password: e.target.value })}
+                required
+                className="h-12"
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">{t('auth.confirmPassword')}</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                required
+                className="h-12"
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="flex gap-4">
+              <Button type="submit" size="lg" className="flex-1" disabled={savingPassword}>
+                {savingPassword ? t('common.loading') : t('common.save')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="flex-1"
+                onClick={() => setPasswordDialogOpen(false)}
+              >
+                {t('common.cancel')}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

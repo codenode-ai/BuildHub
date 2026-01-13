@@ -11,10 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signInWithUsername, signUpWithUsername } = useAuth();
+  const { signInWithEmail, signUpWithEmail } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        const { error } = await signInWithUsername(username, password);
+        const { error } = await signInWithEmail(email, password);
         if (error) {
           toast({
             title: 'Erro',
@@ -39,7 +39,7 @@ export default function LoginPage() {
           navigate(from, { replace: true });
         }
       } else {
-        const { error } = await signUpWithUsername(username, password);
+        const { error } = await signUpWithEmail(email, password);
         if (error) {
           toast({
             title: 'Erro',
@@ -78,14 +78,14 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">{t('auth.username')}</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                autoComplete="username"
+                autoComplete="email"
                 className="h-12"
               />
             </div>
