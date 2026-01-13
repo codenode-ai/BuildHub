@@ -1,0 +1,66 @@
+# Task: Sistema de Gestão de Obras (Construction Management System)
+
+## Plan
+- [x] Step 1: Read key configuration files
+  - [x] Read src/index.css for design tokens
+  - [x] Read tailwind.config.js for theme configuration
+  - [x] Read src/contexts/AuthContext.tsx for auth pattern
+- [x] Step 2: Database Design & Setup
+  - [x] Initialize Supabase
+  - [x] Create database schema with all tables and relationships
+  - [x] Set up RLS policies and triggers
+- [x] Step 3: Type Definitions & API Layer
+  - [x] Create TypeScript types for all entities
+  - [x] Create database API functions for CRUD operations
+- [x] Step 4: Core Infrastructure
+  - [x] Update AuthContext for login functionality
+  - [x] Create LanguageContext for bilingual support (PT/EN)
+  - [x] Create main layout with sidebar navigation
+  - [x] Create header with language selector and auth status
+- [x] Step 5: Authentication
+  - [x] Create login page
+  - [x] Update RouteGuard for protected routes
+  - [x] Update App.tsx with AuthProvider and RouteGuard
+- [x] Step 6: Client & Employee Management
+  - [x] Create client list page
+  - [x] Create client detail page with projects list
+  - [x] Create client form (create/edit)
+  - [x] Create employee list page
+  - [x] Create employee form (create/edit)
+- [x] Step 7: Project Management (Core)
+  - [x] Create projects dashboard with metrics
+  - [x] Create project detail page with tabs
+  - [x] Create project form (create/edit)
+  - [x] Implement project status management
+- [x] Step 8: Budget Management
+  - [x] Create budget section with items list
+  - [x] Create budget item form
+  - [x] Implement budget calculations
+- [x] Step 9: Financial Management
+  - [x] Create revenue tracking section
+  - [x] Create cost tracking section
+  - [x] Create financial summary calculations
+- [x] Step 10: Team & Labor Management
+  - [x] Create team assignment section
+  - [x] Create labor entry form
+  - [x] Create labor summary calculations
+- [x] Step 11: Financial Dashboard
+  - [x] Create global financial dashboard
+  - [x] Implement period filters
+  - [x] Create financial metrics display
+- [x] Step 12: Routes & Final Integration
+  - [x] Update routes.tsx with all pages
+  - [x] Ensure all navigation works correctly
+  - [x] Run lint and fix all issues
+
+## Notes
+- System is bilingual (Portuguese/English)
+- Mobile-first design with large buttons
+- Client has 1:N relationship with Projects
+- Project is the central hub of the system
+- Project lifecycle: Orçamento → A iniciar → Em andamento → Paralisada → Finalizada
+- Cost types: Mão de obra (Labor) and Material/Outros (Material/Others)
+- No file uploads, no external integrations, no advanced permissions
+- Simple CRUD operations with clear navigation (Back, Edit, Delete, Save buttons)
+- All features implemented successfully
+- Lint passed with no errors
