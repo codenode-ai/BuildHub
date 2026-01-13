@@ -42,6 +42,7 @@ const translations = {
     'auth.logout': 'Sair',
     'auth.username': 'Usuário',
     'auth.password': 'Senha',
+    'auth.email': 'E-mail',
     'auth.changePassword': 'Alterar senha',
     'auth.newPassword': 'Nova senha',
     'auth.confirmPassword': 'Confirmar senha',
@@ -61,7 +62,7 @@ const translations = {
     'nav.financial': 'Financeiro',
 
     // Dashboard
-    'dashboard.title': 'Dashboard de Obras',
+    'dashboard.title': 'Minhas obras',
     'dashboard.activeProjects': 'Obras Ativas',
     'dashboard.completedProjects': 'Obras Finalizadas',
     'dashboard.totalProjects': 'Total de Obras',
