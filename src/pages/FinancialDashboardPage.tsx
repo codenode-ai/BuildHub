@@ -74,12 +74,18 @@ export default function FinancialDashboardPage() {
 
   // Calculations
   const totalReceitas = receitas.reduce((sum, r) => sum + Number(r.valor), 0);
-  const totalCustos = custos.reduce((sum, c) => sum + Number(c.valor), 0);
-  const totalMaoObra = lancamentos.reduce((sum, l) => {
+  const totalCustosMateriais = custos
+    .filter((c) => c.tipo === 'material_outros')
+    .reduce((sum, c) => sum + Number(c.valor), 0);
+  const totalCustosMaoObra = custos
+    .filter((c) => c.tipo === 'mao_de_obra')
+    .reduce((sum, c) => sum + Number(c.valor), 0);
+  const totalMaoObraLancamentos = lancamentos.reduce((sum, l) => {
     const func = funcionarios.find(f => f.id === l.funcionario_id);
     return sum + (func ? Number(l.quantidade) * Number(func.valor) : 0);
   }, 0);
-  const resultado = totalReceitas - totalCustos - totalMaoObra;
+  const totalMaoObra = totalMaoObraLancamentos + totalCustosMaoObra;
+  const resultado = totalReceitas - totalCustosMateriais - totalMaoObra;
 
   if (loading) {
     return (
@@ -156,9 +162,11 @@ export default function FinancialDashboardPage() {
             <TrendingDown className="h-5 w-5 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">${(totalCustos + totalMaoObra).toFixed(2)}</div>
+            <div className="text-3xl font-bold">
+              ${(totalCustosMateriais + totalMaoObra).toFixed(2)}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
-              ${totalCustos.toFixed(2)} materiais + ${totalMaoObra.toFixed(2)} mão de obra
+              ${totalCustosMateriais.toFixed(2)} materiais + ${totalMaoObra.toFixed(2)} mão de obra
             </p>
           </CardContent>
         </Card>
@@ -237,7 +245,7 @@ export default function FinancialDashboardPage() {
                 {custos.slice(0, 3).map((custo) => (
                   <div key={custo.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {new Date(custo.data).toLocaleDateString()} - {custo.descricao || t('financial.materials')}
+                      {new Date(custo.data).toLocaleDateString()} - {custo.descricao || (custo.tipo === 'mao_de_obra' ? t('financial.labor') : t('financial.materials'))}
                     </span>
                     <span className="font-semibold">${custo.valor.toFixed(2)}</span>
                   </div>

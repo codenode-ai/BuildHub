@@ -159,12 +159,15 @@ export default function ObraDetailPage() {
   // Calculations
   const totalOrcado = orcamentoItens.reduce((sum, item) => sum + Number(item.quantidade) * Number(item.valor_unitario), 0);
   const totalRecebido = receitas.reduce((sum, r) => sum + Number(r.valor), 0);
-  const totalCustos = custos.reduce((sum, c) => sum + Number(c.valor), 0);
-  const totalMaoObra = lancamentos.reduce((sum, l) => {
+  const materialCustos = custos.filter((c) => c.tipo === 'material_outros');
+  const maoDeObraCustos = custos.filter((c) => c.tipo === 'mao_de_obra');
+  const totalCustosMateriais = materialCustos.reduce((sum, c) => sum + Number(c.valor), 0);
+  const totalMaoObraLancamentos = lancamentos.reduce((sum, l) => {
     const func = funcionarios.find(f => f.id === l.funcionario_id);
     return sum + (func ? Number(l.quantidade) * Number(func.valor) : 0);
   }, 0);
-  const resultado = totalRecebido - totalCustos - totalMaoObra;
+  const totalMaoObra = totalMaoObraLancamentos + maoDeObraCustos.reduce((sum, c) => sum + Number(c.valor), 0);
+  const resultado = totalRecebido - totalCustosMateriais - totalMaoObra;
 
   // Budget Item handlers
   const openItemDialog = (item?: OrcamentoItem) => {
@@ -487,7 +490,7 @@ export default function ObraDetailPage() {
                 <CardTitle className="text-sm">{t('projects.costsTotal')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">${totalCustos.toFixed(2)}</p>
+                <p className="text-2xl font-bold">${totalCustosMateriais.toFixed(2)}</p>
               </CardContent>
             </Card>
             <Card>
@@ -935,7 +938,9 @@ export default function ObraDetailPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mao_de_obra">{t('financial.labor')}</SelectItem>
+                  {editingCusto?.tipo === 'mao_de_obra' && (
+                    <SelectItem value="mao_de_obra">{t('financial.labor')}</SelectItem>
+                  )}
                   <SelectItem value="material_outros">{t('financial.materials')}</SelectItem>
                 </SelectContent>
               </Select>
