@@ -50,6 +50,7 @@ import {
   equipeObraApi,
   lancamentosMaoObraApi,
   funcionariosApi,
+  materiaisSobraAplicacoesApi,
 } from '@/db/api';
 import type {
   ObraWithCliente,
@@ -62,6 +63,7 @@ import type {
   Funcionario,
   TipoCusto,
   StatusObra,
+  MaterialSobraAplicacao,
 } from '@/types/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -77,6 +79,7 @@ export default function ObraDetailPage() {
   const [custos, setCustos] = useState<Custo[]>([]);
   const [equipe, setEquipe] = useState<EquipeObraWithFuncionario[]>([]);
   const [lancamentos, setLancamentos] = useState<LancamentoMaoObraWithFuncionario[]>([]);
+  const [creditos, setCreditos] = useState<MaterialSobraAplicacao[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState<{ type: string; id: string } | null>(null);
@@ -128,6 +131,9 @@ export default function ObraDetailPage() {
       setLancamentos(lancamentosData);
       setFuncionarios(funcionariosData);
 
+      const creditosData = await materiaisSobraAplicacoesApi.getByObraDestinoId(id);
+      setCreditos(creditosData);
+
       if (orcamentoData) {
         const itensData = await orcamentoItensApi.getByOrcamentoId(orcamentoData.id);
         setOrcamentoItens(itensData);
@@ -167,7 +173,8 @@ export default function ObraDetailPage() {
     return sum + (func ? Number(l.quantidade) * Number(func.valor) : 0);
   }, 0);
   const totalMaoObra = totalMaoObraLancamentos + maoDeObraCustos.reduce((sum, c) => sum + Number(c.valor), 0);
-  const resultado = totalRecebido - totalCustosMateriais - totalMaoObra;
+  const totalCreditos = creditos.reduce((sum, c) => sum + Number(c.valor_credito), 0);
+  const resultado = totalRecebido - totalCustosMateriais - totalMaoObra + totalCreditos;
 
   // Budget Item handlers
   const openItemDialog = (item?: OrcamentoItem) => {
@@ -493,15 +500,23 @@ export default function ObraDetailPage() {
                 <p className="text-2xl font-bold">${totalCustosMateriais.toFixed(2)}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">{t('projects.laborTotal')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">${totalMaoObra.toFixed(2)}</p>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">{t('projects.laborTotal')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">${totalMaoObra.toFixed(2)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">{t('projects.leftoversCredit')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-primary">${totalCreditos.toFixed(2)}</p>
+            </CardContent>
+          </Card>
+        </div>
           <Card>
             <CardHeader>
               <CardTitle>{t('projects.estimatedResult')}</CardTitle>
@@ -692,6 +707,46 @@ export default function ObraDetailPage() {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('financial.leftoversCredit')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {creditos.length === 0 ? (
+                <p className="text-center text-muted-foreground">{t('common.noData')}</p>
+              ) : (
+                <div className="space-y-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('common.date')}</TableHead>
+                        <TableHead className="text-right">{t('leftovers.quantity')}</TableHead>
+                        <TableHead className="text-right">{t('leftovers.creditValue')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {creditos.map((credito) => (
+                        <TableRow key={credito.id}>
+                          <TableCell>{new Date(credito.data).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-right">{Number(credito.quantidade).toFixed(2)}</TableCell>
+                          <TableCell className="text-right font-semibold text-primary">
+                            ${Number(credito.valor_credito).toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <div className="flex justify-end border-t border-border pt-4">
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">{t('projects.leftoversCredit')}</p>
+                      <p className="text-2xl font-bold text-primary">${totalCreditos.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

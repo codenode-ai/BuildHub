@@ -12,6 +12,8 @@ import type {
   EquipeObraWithFuncionario,
   LancamentoMaoObra,
   LancamentoMaoObraWithFuncionario,
+  MaterialSobra,
+  MaterialSobraAplicacao,
 } from '@/types/types';
 
 // Clientes API
@@ -550,5 +552,113 @@ export const lancamentosMaoObraApi = {
     });
 
     return total;
+  },
+};
+
+// Materiais Sobra API
+export const materiaisSobraApi = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('materiais_sobra')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async getByObraOrigemId(obraId: string) {
+    const { data, error } = await supabase
+      .from('materiais_sobra')
+      .select('*')
+      .eq('obra_origem_id', obraId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async create(material: Partial<MaterialSobra>) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
+    const { data, error } = await supabase
+      .from('materiais_sobra')
+      .insert({ ...material, user_id: user.id })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, material: Partial<MaterialSobra>) {
+    const { data, error } = await supabase
+      .from('materiais_sobra')
+      .update(material)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('materiais_sobra')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+};
+
+// Materiais Sobra Aplicacoes API
+export const materiaisSobraAplicacoesApi = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('materiais_sobra_aplicacoes')
+      .select('*')
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async getByObraDestinoId(obraId: string) {
+    const { data, error } = await supabase
+      .from('materiais_sobra_aplicacoes')
+      .select('*')
+      .eq('obra_destino_id', obraId)
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async getAllByDateRange(startDate: string, endDate: string) {
+    const { data, error } = await supabase
+      .from('materiais_sobra_aplicacoes')
+      .select('*')
+      .gte('data', startDate)
+      .lte('data', endDate)
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async create(aplicacao: Partial<MaterialSobraAplicacao>) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
+    const { data, error } = await supabase
+      .from('materiais_sobra_aplicacoes')
+      .insert({ ...aplicacao, user_id: user.id })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('materiais_sobra_aplicacoes')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   },
 };

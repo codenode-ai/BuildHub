@@ -59,6 +59,7 @@ const translations = {
     'nav.projects': 'Obras',
     'nav.clients': 'Clientes',
     'nav.employees': 'Funcionários',
+    'nav.leftovers': 'Sobras',
     'nav.financial': 'Financeiro',
 
     // Dashboard
@@ -89,6 +90,7 @@ const translations = {
     'projects.costsTotal': 'Total de Materiais',
     'projects.laborTotal': 'Total Mão de Obra',
     'projects.estimatedResult': 'Resultado Estimado',
+    'projects.leftoversCredit': 'Créditos de Sobras',
     'projects.profit': 'Lucro',
     'projects.loss': 'Prejuízo',
 
@@ -146,6 +148,7 @@ const translations = {
     'financial.totalCosts': 'Total de Custos',
     'financial.result': 'Resultado',
     'financial.completedProjects': 'Obras Finalizadas no Período',
+    'financial.leftoversCredit': 'Créditos de Sobras',
     'financial.materialsHint': 'Registre materiais aqui; mão de obra fica na aba Equipe.',
 
     // Employees
@@ -159,6 +162,24 @@ const translations = {
     'employees.rate': 'Valor',
     'employees.phone': 'Telefone',
     'employees.deleteConfirm': 'Tem certeza que deseja excluir este funcionário?',
+
+    // Leftovers
+    'leftovers.title': 'Sobras de Materiais',
+    'leftovers.new': 'Nova Sobra',
+    'leftovers.apply': 'Aplicar',
+    'leftovers.available': 'Disponível',
+    'leftovers.totalValue': 'Valor Total',
+    'leftovers.balanceValue': 'Saldo de Valor',
+    'leftovers.originWork': 'Obra de Origem',
+    'leftovers.destinationWork': 'Obra de Destino',
+    'leftovers.unit': 'Unidade',
+    'leftovers.quantity': 'Quantidade',
+    'leftovers.creditValue': 'Valor do Crédito',
+    'leftovers.date': 'Data',
+    'leftovers.deleteConfirm': 'Tem certeza que deseja excluir esta sobra?',
+    'leftovers.noData': 'Nenhuma sobra registrada',
+    'leftovers.exceedQuantity': 'Quantidade maior que o saldo disponível.',
+    'leftovers.exceedValue': 'Valor do crédito maior que o saldo disponível.',
 
     // Team
     'team.title': 'Equipe da Obra',
@@ -235,6 +256,7 @@ const translations = {
     'nav.projects': 'Projects',
     'nav.clients': 'Clients',
     'nav.employees': 'Employees',
+    'nav.leftovers': 'Leftovers',
     'nav.financial': 'Financial',
 
     // Dashboard
@@ -265,6 +287,7 @@ const translations = {
     'projects.costsTotal': 'Total Materials',
     'projects.laborTotal': 'Total Labor',
     'projects.estimatedResult': 'Estimated Result',
+    'projects.leftoversCredit': 'Leftovers Credits',
     'projects.profit': 'Profit',
     'projects.loss': 'Loss',
 
@@ -322,6 +345,7 @@ const translations = {
     'financial.totalCosts': 'Total Costs',
     'financial.result': 'Result',
     'financial.completedProjects': 'Projects Completed in Period',
+    'financial.leftoversCredit': 'Leftovers Credits',
     'financial.materialsHint': 'Record materials here; labor is tracked in the Team tab.',
 
     // Employees
@@ -335,6 +359,24 @@ const translations = {
     'employees.rate': 'Rate',
     'employees.phone': 'Phone',
     'employees.deleteConfirm': 'Are you sure you want to delete this employee?',
+
+    // Leftovers
+    'leftovers.title': 'Material Leftovers',
+    'leftovers.new': 'New Leftover',
+    'leftovers.apply': 'Apply',
+    'leftovers.available': 'Available',
+    'leftovers.totalValue': 'Total Value',
+    'leftovers.balanceValue': 'Balance Value',
+    'leftovers.originWork': 'Origin Project',
+    'leftovers.destinationWork': 'Destination Project',
+    'leftovers.unit': 'Unit',
+    'leftovers.quantity': 'Quantity',
+    'leftovers.creditValue': 'Credit Value',
+    'leftovers.date': 'Date',
+    'leftovers.deleteConfirm': 'Are you sure you want to delete this leftover?',
+    'leftovers.noData': 'No leftovers found',
+    'leftovers.exceedQuantity': 'Quantity is greater than available balance.',
+    'leftovers.exceedValue': 'Credit value is greater than available balance.',
 
     // Team
     'team.title': 'Project Team',

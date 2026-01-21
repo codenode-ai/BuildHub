@@ -128,3 +128,27 @@ export type LancamentoMaoObra = {
 export type LancamentoMaoObraWithFuncionario = LancamentoMaoObra & {
   funcionarios: Funcionario;
 };
+
+export type MaterialSobra = {
+  id: string;
+  descricao: string;
+  unidade?: string;
+  quantidade: number;
+  valor_total: number;
+  obra_origem_id?: string | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MaterialSobraAplicacao = {
+  id: string;
+  material_sobra_id: string;
+  obra_destino_id: string;
+  quantidade: number;
+  valor_credito: number;
+  data: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+};

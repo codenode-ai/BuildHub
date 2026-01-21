@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Building2, Users, Briefcase, DollarSign, LayoutDashboard, Menu, LogOut, Globe } from 'lucide-react';
+import { Building2, Users, Briefcase, DollarSign, LayoutDashboard, Menu, LogOut, Globe, PackageOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -31,6 +31,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { name: t('nav.projects'), href: '/obras', icon: Building2 },
     { name: t('nav.clients'), href: '/clientes', icon: Users },
     { name: t('nav.employees'), href: '/funcionarios', icon: Briefcase },
+    { name: t('nav.leftovers'), href: '/sobras', icon: PackageOpen },
     { name: t('nav.financial'), href: '/financeiro', icon: DollarSign },
   ];
 

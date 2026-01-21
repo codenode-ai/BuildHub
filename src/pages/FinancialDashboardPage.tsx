@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { obrasApi, receitasApi, custosApi, lancamentosMaoObraApi, funcionariosApi } from '@/db/api';
-import type { Receita, Custo, LancamentoMaoObra, Funcionario } from '@/types/types';
+import { obrasApi, receitasApi, custosApi, lancamentosMaoObraApi, funcionariosApi, materiaisSobraAplicacoesApi } from '@/db/api';
+import type { Receita, Custo, LancamentoMaoObra, Funcionario, MaterialSobraAplicacao } from '@/types/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function FinancialDashboardPage() {
@@ -18,6 +18,7 @@ export default function FinancialDashboardPage() {
   const [receitas, setReceitas] = useState<Receita[]>([]);
   const [custos, setCustos] = useState<Custo[]>([]);
   const [lancamentos, setLancamentos] = useState<LancamentoMaoObra[]>([]);
+  const [creditos, setCreditos] = useState<MaterialSobraAplicacao[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [obrasFinalizadas, setObrasFinalizadas] = useState(0);
 
@@ -51,15 +52,17 @@ export default function FinancialDashboardPage() {
       setObrasFinalizadas(finalizadas.length);
 
       // Load financial data by date range to avoid per-project queries
-      const [receitasData, custosData, lancamentosData] = await Promise.all([
+      const [receitasData, custosData, lancamentosData, creditosData] = await Promise.all([
         receitasApi.getAllByDateRange(startDate, endDate),
         custosApi.getAllByDateRange(startDate, endDate),
         lancamentosMaoObraApi.getAllByDateRange(startDate, endDate),
+        materiaisSobraAplicacoesApi.getAllByDateRange(startDate, endDate),
       ]);
 
       setReceitas(receitasData);
       setCustos(custosData);
       setLancamentos(lancamentosData);
+      setCreditos(creditosData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast({
@@ -85,7 +88,9 @@ export default function FinancialDashboardPage() {
     return sum + (func ? Number(l.quantidade) * Number(func.valor) : 0);
   }, 0);
   const totalMaoObra = totalMaoObraLancamentos + totalCustosMaoObra;
-  const resultado = totalReceitas - totalCustosMateriais - totalMaoObra;
+  const totalCreditos = creditos.reduce((sum, c) => sum + Number(c.valor_credito), 0);
+  const resultado = totalReceitas - totalCustosMateriais - totalMaoObra + totalCreditos;
+  const breakdownCount = custos.length + lancamentos.length + creditos.length;
 
   if (loading) {
     return (
@@ -163,10 +168,10 @@ export default function FinancialDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              ${(totalCustosMateriais + totalMaoObra).toFixed(2)}
+              ${(totalCustosMateriais + totalMaoObra - totalCreditos).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              ${totalCustosMateriais.toFixed(2)} materiais + ${totalMaoObra.toFixed(2)} mão de obra
+              ${totalCustosMateriais.toFixed(2)} materiais + ${totalMaoObra.toFixed(2)} mão de obra - ${totalCreditos.toFixed(2)} créditos
             </p>
           </CardContent>
         </Card>
@@ -238,7 +243,7 @@ export default function FinancialDashboardPage() {
             <CardTitle>{t('financial.costs')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {custos.length === 0 && lancamentos.length === 0 ? (
+            {custos.length === 0 && lancamentos.length === 0 && creditos.length === 0 ? (
               <p className="text-center text-muted-foreground">{t('common.noData')}</p>
             ) : (
               <div className="space-y-2">
@@ -262,9 +267,17 @@ export default function FinancialDashboardPage() {
                     </div>
                   );
                 })}
-                {(custos.length + lancamentos.length) > 5 && (
+                {creditos.slice(0, 2).map((credito) => (
+                  <div key={credito.id} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {new Date(credito.data).toLocaleDateString()} - {t('financial.leftoversCredit')}
+                    </span>
+                    <span className="font-semibold text-primary">-${Number(credito.valor_credito).toFixed(2)}</span>
+                  </div>
+                ))}
+                {breakdownCount > 5 && (
                   <p className="text-xs text-muted-foreground text-center pt-2">
-                    +{(custos.length + lancamentos.length) - 5} mais
+                    +{breakdownCount - 5} mais
                   </p>
                 )}
               </div>

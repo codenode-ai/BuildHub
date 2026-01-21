@@ -7,6 +7,7 @@ import FuncionariosPage from './pages/FuncionariosPage';
 import ObraDetailPage from './pages/ObraDetailPage';
 import ObraFormPage from './pages/ObraFormPage';
 import ObrasListPage from './pages/ObrasListPage';
+import MateriaisSobraPage from './pages/MateriaisSobraPage';
 import FinancialDashboardPage from './pages/FinancialDashboardPage';
 import NotFound from './pages/NotFound';
 import type { ReactNode } from 'react';
@@ -73,6 +74,11 @@ const routes: RouteConfig[] = [
     name: 'Funcionários',
     path: '/funcionarios',
     element: <FuncionariosPage />
+  },
+  {
+    name: 'Sobras',
+    path: '/sobras',
+    element: <MateriaisSobraPage />
   },
   {
     name: 'Financeiro',
