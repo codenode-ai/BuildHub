@@ -647,6 +647,7 @@ export default function ObraDetailPage() {
                   {t('financial.newCost')}
                 </Button>
               </div>
+              <p className="text-sm text-muted-foreground">{t('financial.materialsHint')}</p>
             </CardHeader>
             <CardContent>
               {custos.length === 0 ? (

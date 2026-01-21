@@ -86,7 +86,7 @@ const translations = {
     'projects.history': 'Histórico',
     'projects.budgetedTotal': 'Total Orçado',
     'projects.receivedTotal': 'Total Recebido',
-    'projects.costsTotal': 'Total de Custos',
+    'projects.costsTotal': 'Total de Materiais',
     'projects.laborTotal': 'Total Mão de Obra',
     'projects.estimatedResult': 'Resultado Estimado',
     'projects.profit': 'Lucro',
@@ -146,6 +146,7 @@ const translations = {
     'financial.totalCosts': 'Total de Custos',
     'financial.result': 'Resultado',
     'financial.completedProjects': 'Obras Finalizadas no Período',
+    'financial.materialsHint': 'Registre materiais aqui; mão de obra fica na aba Equipe.',
 
     // Employees
     'employees.title': 'Funcionários',
@@ -261,7 +262,7 @@ const translations = {
     'projects.history': 'History',
     'projects.budgetedTotal': 'Budgeted Total',
     'projects.receivedTotal': 'Total Received',
-    'projects.costsTotal': 'Total Costs',
+    'projects.costsTotal': 'Total Materials',
     'projects.laborTotal': 'Total Labor',
     'projects.estimatedResult': 'Estimated Result',
     'projects.profit': 'Profit',
@@ -321,6 +322,7 @@ const translations = {
     'financial.totalCosts': 'Total Costs',
     'financial.result': 'Result',
     'financial.completedProjects': 'Projects Completed in Period',
+    'financial.materialsHint': 'Record materials here; labor is tracked in the Team tab.',
 
     // Employees
     'employees.title': 'Employees',
