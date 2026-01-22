@@ -51,6 +51,9 @@ import {
   lancamentosMaoObraApi,
   funcionariosApi,
   materiaisSobraAplicacoesApi,
+  materiaisApi,
+  materiaisMovimentosApi,
+  alocacoesDiariasApi,
 } from '@/db/api';
 import type {
   ObraWithCliente,
@@ -64,6 +67,9 @@ import type {
   TipoCusto,
   StatusObra,
   MaterialSobraAplicacao,
+  MaterialMovimento,
+  Material,
+  AlocacaoDiaria,
 } from '@/types/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -81,6 +87,9 @@ export default function ObraDetailPage() {
   const [lancamentos, setLancamentos] = useState<LancamentoMaoObraWithFuncionario[]>([]);
   const [creditos, setCreditos] = useState<MaterialSobraAplicacao[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [alocacoes, setAlocacoes] = useState<AlocacaoDiaria[]>([]);
+  const [materiais, setMateriais] = useState<Material[]>([]);
+  const [movimentos, setMovimentos] = useState<MaterialMovimento[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState<{ type: string; id: string } | null>(null);
   
@@ -90,6 +99,7 @@ export default function ObraDetailPage() {
   const [custoDialog, setCustoDialog] = useState(false);
   const [lancamentoDialog, setLancamentoDialog] = useState(false);
   const [addFuncionarioDialog, setAddFuncionarioDialog] = useState(false);
+  const [materialDialog, setMaterialDialog] = useState(false);
   
   const [editingItem, setEditingItem] = useState<OrcamentoItem | null>(null);
   const [editingReceita, setEditingReceita] = useState<Receita | null>(null);
@@ -101,6 +111,13 @@ export default function ObraDetailPage() {
   const [custoForm, setCustoForm] = useState({ tipo: 'material_outros' as TipoCusto, valor: '', data: '', descricao: '' });
   const [lancamentoForm, setLancamentoForm] = useState({ funcionario_id: '', data: '', quantidade: '', observacoes: '' });
   const [selectedFuncionarioId, setSelectedFuncionarioId] = useState('');
+  const [materialForm, setMaterialForm] = useState({
+    material_id: '',
+    quantidade: '',
+    valor_total: '',
+    data: '',
+    observacao: '',
+  });
 
   useEffect(() => {
     if (id) {
@@ -113,7 +130,19 @@ export default function ObraDetailPage() {
 
     try {
       setLoading(true);
-      const [obraData, orcamentoData, receitasData, custosData, equipeData, lancamentosData, funcionariosData] = await Promise.all([
+      const [
+        obraData,
+        orcamentoData,
+        receitasData,
+        custosData,
+        equipeData,
+        lancamentosData,
+        funcionariosData,
+        materiaisData,
+        movimentosData,
+        alocacoesData,
+        creditosData,
+      ] = await Promise.all([
         obrasApi.getById(id),
         orcamentosApi.getByObraId(id),
         receitasApi.getByObraId(id),
@@ -121,6 +150,10 @@ export default function ObraDetailPage() {
         equipeObraApi.getByObraId(id),
         lancamentosMaoObraApi.getByObraId(id),
         funcionariosApi.getAll(),
+        materiaisApi.getAll(),
+        materiaisMovimentosApi.getByObraId(id),
+        alocacoesDiariasApi.getByObraId(id),
+        materiaisSobraAplicacoesApi.getByObraDestinoId(id),
       ]);
 
       setObra(obraData);
@@ -130,8 +163,9 @@ export default function ObraDetailPage() {
       setEquipe(equipeData);
       setLancamentos(lancamentosData);
       setFuncionarios(funcionariosData);
-
-      const creditosData = await materiaisSobraAplicacoesApi.getByObraDestinoId(id);
+      setMateriais(materiaisData);
+      setMovimentos(movimentosData);
+      setAlocacoes(alocacoesData);
       setCreditos(creditosData);
 
       if (orcamentoData) {
@@ -167,14 +201,24 @@ export default function ObraDetailPage() {
   const totalRecebido = receitas.reduce((sum, r) => sum + Number(r.valor), 0);
   const materialCustos = custos.filter((c) => c.tipo === 'material_outros');
   const maoDeObraCustos = custos.filter((c) => c.tipo === 'mao_de_obra');
-  const totalCustosMateriais = materialCustos.reduce((sum, c) => sum + Number(c.valor), 0);
+  const totalCustosMateriaisLegado = materialCustos.reduce((sum, c) => sum + Number(c.valor), 0);
+  const totalMateriaisMovimentos = movimentos
+    .filter((mov) => mov.tipo === 'uso')
+    .reduce((sum, mov) => sum + Number(mov.valor_total), 0);
+  const totalCustosMateriais = totalCustosMateriaisLegado + totalMateriaisMovimentos;
   const totalMaoObraLancamentos = lancamentos.reduce((sum, l) => {
     const func = funcionarios.find(f => f.id === l.funcionario_id);
     return sum + (func ? Number(l.quantidade) * Number(func.valor) : 0);
   }, 0);
-  const totalMaoObra = totalMaoObraLancamentos + maoDeObraCustos.reduce((sum, c) => sum + Number(c.valor), 0);
+  const totalMaoObraAlocacoes = alocacoes.reduce(
+    (sum, a) => sum + Number(a.horas) * Number(a.valor_hora),
+    0
+  );
+  const totalMaoObra = totalMaoObraLancamentos + totalMaoObraAlocacoes + maoDeObraCustos.reduce((sum, c) => sum + Number(c.valor), 0);
   const totalCreditos = creditos.reduce((sum, c) => sum + Number(c.valor_credito), 0);
   const resultado = totalRecebido - totalCustosMateriais - totalMaoObra + totalCreditos;
+  const orcamentoTotal = obra?.orcamento_total ? Number(obra.orcamento_total) : 0;
+  const saldoOrcamento = orcamentoTotal - totalCustosMateriais - totalMaoObra + totalCreditos;
 
   // Budget Item handlers
   const openItemDialog = (item?: OrcamentoItem) => {
@@ -312,6 +356,44 @@ export default function ObraDetailPage() {
       loadData();
     } catch (error) {
       console.error('Erro ao salvar custo:', error);
+      toast({ title: 'Erro', description: t('messages.error'), variant: 'destructive' });
+    }
+  };
+
+  // Material handlers
+  const openMaterialDialog = () => {
+    setMaterialForm({
+      material_id: '',
+      quantidade: '',
+      valor_total: '',
+      data: new Date().toISOString().split('T')[0],
+      observacao: '',
+    });
+    setMaterialDialog(true);
+  };
+
+  const handleMaterialSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+
+    try {
+      const data = {
+        obra_id: id,
+        material_id: materialForm.material_id,
+        tipo: 'uso',
+        quantidade: parseFloat(materialForm.quantidade),
+        valor_total: parseFloat(materialForm.valor_total),
+        data: materialForm.data,
+        observacao: materialForm.observacao || undefined,
+      };
+
+      await materiaisMovimentosApi.create(data);
+
+      toast({ title: 'Sucesso', description: t('messages.saveSuccess') });
+      setMaterialDialog(false);
+      loadData();
+    } catch (error) {
+      console.error('Erro ao salvar material:', error);
       toast({ title: 'Erro', description: t('messages.error'), variant: 'destructive' });
     }
   };
@@ -466,16 +548,36 @@ export default function ObraDetailPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="resumo" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="resumo">{t('projects.summary')}</TabsTrigger>
-          <TabsTrigger value="orcamento">{t('projects.budget')}</TabsTrigger>
           <TabsTrigger value="financeiro">{t('projects.financial')}</TabsTrigger>
           <TabsTrigger value="equipe">{t('projects.team')}</TabsTrigger>
         </TabsList>
 
         {/* Summary Tab */}
         <TabsContent value="resumo" className="space-y-4">
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">{t('projects.budgetTotal')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">${orcamentoTotal.toFixed(2)}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">{t('projects.budgetBalance')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className={`text-2xl font-bold ${saldoOrcamento >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                  ${saldoOrcamento.toFixed(2)}
+                </p>
+                {saldoOrcamento < 0 && (
+                  <p className="text-sm text-destructive">{t('projects.loss')}</p>
+                )}
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">{t('projects.budgetedTotal')}</CardTitle>
@@ -656,8 +758,8 @@ export default function ObraDetailPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>{t('financial.costs')}</CardTitle>
-                <Button onClick={() => openCustoDialog()}>
+                <CardTitle>{t('financial.materialsUsage')}</CardTitle>
+                <Button onClick={openMaterialDialog}>
                   <Plus className="mr-2 h-4 w-4" />
                   {t('financial.newCost')}
                 </Button>
@@ -665,43 +767,41 @@ export default function ObraDetailPage() {
               <p className="text-sm text-muted-foreground">{t('financial.materialsHint')}</p>
             </CardHeader>
             <CardContent>
-              {custos.length === 0 ? (
+              {movimentos.filter((mov) => mov.tipo === 'uso').length === 0 && materialCustos.length === 0 ? (
                 <p className="text-center text-muted-foreground">{t('common.noData')}</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t('common.date')}</TableHead>
-                      <TableHead>{t('financial.costType')}</TableHead>
                       <TableHead>{t('common.description')}</TableHead>
+                      <TableHead className="text-right">{t('leftovers.quantity')}</TableHead>
                       <TableHead className="text-right">{t('common.value')}</TableHead>
-                      <TableHead className="w-[100px]">{t('common.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {custos.map((custo) => (
+                    {movimentos
+                      .filter((mov) => mov.tipo === 'uso')
+                      .map((mov) => {
+                        const material = materiais.find((item) => item.id === mov.material_id);
+                        return (
+                          <TableRow key={mov.id}>
+                            <TableCell>{new Date(mov.data).toLocaleDateString()}</TableCell>
+                            <TableCell>{material?.nome || t('materials.title')}</TableCell>
+                            <TableCell className="text-right">{Number(mov.quantidade).toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-semibold">
+                              ${Number(mov.valor_total).toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    {materialCustos.map((custo) => (
                       <TableRow key={custo.id}>
                         <TableCell>{new Date(custo.data).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          {custo.tipo === 'mao_de_obra' ? t('financial.labor') : t('financial.materials')}
-                        </TableCell>
-                        <TableCell>{custo.descricao || '-'}</TableCell>
+                        <TableCell>{custo.descricao || t('materials.title')}</TableCell>
+                        <TableCell className="text-right">-</TableCell>
                         <TableCell className="text-right font-semibold">
-                          ${custo.valor.toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => openCustoDialog(custo)}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeleteDialog({ type: 'custo', id: custo.id })}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          ${Number(custo.valor).toFixed(2)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -790,6 +890,52 @@ export default function ObraDetailPage() {
                       </Button>
                     </div>
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('financial.laborAllocations')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {alocacoes.length === 0 ? (
+                <p className="text-center text-muted-foreground">{t('common.noData')}</p>
+              ) : (
+                <div className="space-y-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('common.date')}</TableHead>
+                        <TableHead>{t('team.employee')}</TableHead>
+                        <TableHead className="text-right">{t('allocations.hours')}</TableHead>
+                        <TableHead className="text-right">{t('common.value')}</TableHead>
+                        <TableHead>{t('common.observations')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {alocacoes.map((alocacao) => {
+                        const func = funcionarios.find((f) => f.id === alocacao.funcionario_id);
+                        const valor = Number(alocacao.horas) * Number(alocacao.valor_hora);
+                        return (
+                          <TableRow key={alocacao.id}>
+                            <TableCell>{new Date(alocacao.data).toLocaleDateString()}</TableCell>
+                            <TableCell>{func?.nome || t('team.employee')}</TableCell>
+                            <TableCell className="text-right">{Number(alocacao.horas).toFixed(1)}</TableCell>
+                            <TableCell className="text-right font-semibold">${valor.toFixed(2)}</TableCell>
+                            <TableCell>{alocacao.observacao || '-'}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                  <div className="flex justify-end border-t border-border pt-4">
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">{t('projects.laborTotal')}</p>
+                      <p className="text-2xl font-bold">${totalMaoObraAlocacoes.toFixed(2)}</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -1036,6 +1182,89 @@ export default function ObraDetailPage() {
             <div className="flex gap-4">
               <Button type="submit" size="lg" className="flex-1">{t('common.save')}</Button>
               <Button type="button" variant="outline" size="lg" onClick={() => setCustoDialog(false)} className="flex-1">
+                {t('common.cancel')}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Material Usage Dialog */}
+      <Dialog open={materialDialog} onOpenChange={setMaterialDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('financial.materialsUsage')}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleMaterialSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="material_id">{t('materials.title')} *</Label>
+              <Select
+                value={materialForm.material_id}
+                onValueChange={(value) => setMaterialForm({ ...materialForm, material_id: value })}
+                required
+              >
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder={t('materials.title')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {materiais.map((material) => (
+                    <SelectItem key={material.id} value={material.id}>
+                      {material.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="material_quantidade">{t('leftovers.quantity')} *</Label>
+                <Input
+                  id="material_quantidade"
+                  type="number"
+                  step="0.01"
+                  value={materialForm.quantidade}
+                  onChange={(e) => setMaterialForm({ ...materialForm, quantidade: e.target.value })}
+                  required
+                  className="h-12"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="material_valor">{t('common.value')} *</Label>
+                <Input
+                  id="material_valor"
+                  type="number"
+                  step="0.01"
+                  value={materialForm.valor_total}
+                  onChange={(e) => setMaterialForm({ ...materialForm, valor_total: e.target.value })}
+                  required
+                  className="h-12"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="material_data">{t('common.date')}</Label>
+              <Input
+                id="material_data"
+                type="date"
+                value={materialForm.data}
+                onChange={(e) => setMaterialForm({ ...materialForm, data: e.target.value })}
+                className="h-12"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="material_observacao">{t('common.observations')}</Label>
+              <Textarea
+                id="material_observacao"
+                value={materialForm.observacao}
+                onChange={(e) => setMaterialForm({ ...materialForm, observacao: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-4">
+              <Button type="submit" size="lg" className="flex-1">
+                {t('common.save')}
+              </Button>
+              <Button type="button" variant="outline" size="lg" onClick={() => setMaterialDialog(false)} className="flex-1">
                 {t('common.cancel')}
               </Button>
             </div>

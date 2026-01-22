@@ -59,6 +59,7 @@ const translations = {
     'nav.projects': 'Obras',
     'nav.clients': 'Clientes',
     'nav.employees': 'Funcionários',
+    'nav.materials': 'Materiais',
     'nav.leftovers': 'Sobras',
     'nav.financial': 'Financeiro',
 
@@ -91,6 +92,8 @@ const translations = {
     'projects.laborTotal': 'Total Mão de Obra',
     'projects.estimatedResult': 'Resultado Estimado',
     'projects.leftoversCredit': 'Créditos de Sobras',
+    'projects.budgetTotal': 'Orçamento Total',
+    'projects.budgetBalance': 'Saldo do Orçamento',
     'projects.profit': 'Lucro',
     'projects.loss': 'Prejuízo',
 
@@ -150,6 +153,8 @@ const translations = {
     'financial.completedProjects': 'Obras Finalizadas no Período',
     'financial.leftoversCredit': 'Créditos de Sobras',
     'financial.materialsHint': 'Registre materiais aqui; mão de obra fica na aba Equipe.',
+    'financial.materialsUsage': 'Materiais (Uso)',
+    'financial.laborAllocations': 'Alocações de Mão de Obra',
 
     // Employees
     'employees.title': 'Funcionários',
@@ -163,6 +168,19 @@ const translations = {
     'employees.phone': 'Telefone',
     'employees.deleteConfirm': 'Tem certeza que deseja excluir este funcionário?',
 
+    // Materials
+    'materials.title': 'Materiais',
+    'materials.new': 'Novo Material',
+    'materials.name': 'Nome do Material',
+    'materials.unit': 'Unidade',
+    'materials.referencePrice': 'Preço de Referência',
+    'materials.deleteConfirm': 'Tem certeza que deseja excluir este material?',
+
+    // Allocations
+    'allocations.title': 'Alocações Diárias',
+    'allocations.new': 'Nova Alocação',
+    'allocations.hours': 'Horas',
+    'allocations.note': 'Observação do Dia',
     // Leftovers
     'leftovers.title': 'Sobras de Materiais',
     'leftovers.new': 'Nova Sobra',
@@ -256,6 +274,7 @@ const translations = {
     'nav.projects': 'Projects',
     'nav.clients': 'Clients',
     'nav.employees': 'Employees',
+    'nav.materials': 'Materials',
     'nav.leftovers': 'Leftovers',
     'nav.financial': 'Financial',
 
@@ -288,6 +307,8 @@ const translations = {
     'projects.laborTotal': 'Total Labor',
     'projects.estimatedResult': 'Estimated Result',
     'projects.leftoversCredit': 'Leftovers Credits',
+    'projects.budgetTotal': 'Total Budget',
+    'projects.budgetBalance': 'Budget Balance',
     'projects.profit': 'Profit',
     'projects.loss': 'Loss',
 
@@ -347,6 +368,8 @@ const translations = {
     'financial.completedProjects': 'Projects Completed in Period',
     'financial.leftoversCredit': 'Leftovers Credits',
     'financial.materialsHint': 'Record materials here; labor is tracked in the Team tab.',
+    'financial.materialsUsage': 'Materials (Usage)',
+    'financial.laborAllocations': 'Labor Allocations',
 
     // Employees
     'employees.title': 'Employees',
@@ -359,6 +382,20 @@ const translations = {
     'employees.rate': 'Rate',
     'employees.phone': 'Phone',
     'employees.deleteConfirm': 'Are you sure you want to delete this employee?',
+
+    // Materials
+    'materials.title': 'Materials',
+    'materials.new': 'New Material',
+    'materials.name': 'Material Name',
+    'materials.unit': 'Unit',
+    'materials.referencePrice': 'Reference Price',
+    'materials.deleteConfirm': 'Are you sure you want to delete this material?',
+
+    // Allocations
+    'allocations.title': 'Daily Allocations',
+    'allocations.new': 'New Allocation',
+    'allocations.hours': 'Hours',
+    'allocations.note': 'Daily Note',
 
     // Leftovers
     'leftovers.title': 'Material Leftovers',

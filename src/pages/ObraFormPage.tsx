@@ -34,6 +34,7 @@ export default function ObraFormPage() {
     data_fim: '',
     motivo_paralisacao: '',
     observacoes: '',
+    orcamento_total: '',
   });
 
   const isEdit = !!id;
@@ -68,6 +69,7 @@ export default function ObraFormPage() {
           data_fim: data.data_fim || '',
           motivo_paralisacao: data.motivo_paralisacao || '',
           observacoes: data.observacoes || '',
+          orcamento_total: data.orcamento_total ? data.orcamento_total.toString() : '',
         });
       }
     } catch (error) {
@@ -86,9 +88,15 @@ export default function ObraFormPage() {
 
     try {
       if (isEdit && id) {
-        await obrasApi.update(id, formData);
+        await obrasApi.update(id, {
+          ...formData,
+          orcamento_total: formData.orcamento_total ? Number(formData.orcamento_total) : 0,
+        });
       } else {
-        await obrasApi.create(formData);
+        await obrasApi.create({
+          ...formData,
+          orcamento_total: formData.orcamento_total ? Number(formData.orcamento_total) : 0,
+        });
       }
 
       toast({
@@ -226,6 +234,18 @@ export default function ObraFormPage() {
                 value={formData.observacoes}
                 onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                 rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="orcamento_total">{t('budget.total')}</Label>
+              <Input
+                id="orcamento_total"
+                type="number"
+                step="0.01"
+                value={formData.orcamento_total}
+                onChange={(e) => setFormData({ ...formData, orcamento_total: e.target.value })}
+                className="h-12"
               />
             </div>
 

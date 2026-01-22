@@ -14,6 +14,9 @@ import type {
   LancamentoMaoObraWithFuncionario,
   MaterialSobra,
   MaterialSobraAplicacao,
+  Material,
+  MaterialMovimento,
+  AlocacaoDiaria,
 } from '@/types/types';
 
 // Clientes API
@@ -165,6 +168,162 @@ export const obrasApi = {
     const total = obras?.length || 0;
 
     return { ativas, finalizadas, total };
+  },
+};
+
+// Materiais API
+export const materiaisApi = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('materiais')
+      .select('*')
+      .order('nome');
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async create(material: Partial<Material>) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
+    const { data, error } = await supabase
+      .from('materiais')
+      .insert({ ...material, user_id: user.id })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, material: Partial<Material>) {
+    const { data, error } = await supabase
+      .from('materiais')
+      .update(material)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('materiais')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+};
+
+// Materiais Movimentos API
+export const materiaisMovimentosApi = {
+  async getByObraId(obraId: string) {
+    const { data, error } = await supabase
+      .from('materiais_movimentos')
+      .select('*')
+      .eq('obra_id', obraId)
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async getAllByDateRange(startDate: string, endDate: string) {
+    const { data, error } = await supabase
+      .from('materiais_movimentos')
+      .select('*')
+      .gte('data', startDate)
+      .lte('data', endDate)
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async create(movimento: Partial<MaterialMovimento>) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
+    const { data, error } = await supabase
+      .from('materiais_movimentos')
+      .insert({ ...movimento, user_id: user.id })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, movimento: Partial<MaterialMovimento>) {
+    const { data, error } = await supabase
+      .from('materiais_movimentos')
+      .update(movimento)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('materiais_movimentos')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+};
+
+// Alocacoes Diarias API
+export const alocacoesDiariasApi = {
+  async getByDateRange(startDate: string, endDate: string) {
+    const { data, error } = await supabase
+      .from('alocacoes_diarias')
+      .select('*')
+      .gte('data', startDate)
+      .lte('data', endDate)
+      .order('data', { ascending: true });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async getByObraId(obraId: string) {
+    const { data, error } = await supabase
+      .from('alocacoes_diarias')
+      .select('*')
+      .eq('obra_id', obraId)
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async create(alocacao: Partial<AlocacaoDiaria>) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
+    const { data, error } = await supabase
+      .from('alocacoes_diarias')
+      .insert({ ...alocacao, user_id: user.id })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, alocacao: Partial<AlocacaoDiaria>) {
+    const { data, error } = await supabase
+      .from('alocacoes_diarias')
+      .update(alocacao)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('alocacoes_diarias')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   },
 };
 

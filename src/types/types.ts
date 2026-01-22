@@ -29,6 +29,7 @@ export type Obra = {
   data_inicio?: string;
   data_fim?: string;
   observacoes?: string;
+  orcamento_total?: number;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -127,6 +128,45 @@ export type LancamentoMaoObra = {
 
 export type LancamentoMaoObraWithFuncionario = LancamentoMaoObra & {
   funcionarios: Funcionario;
+};
+
+export type Material = {
+  id: string;
+  nome: string;
+  unidade?: string;
+  preco_referencia?: number;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TipoMovimentoMaterial = 'uso' | 'sobra' | 'ajuste';
+
+export type MaterialMovimento = {
+  id: string;
+  obra_id: string;
+  material_id: string;
+  tipo: TipoMovimentoMaterial;
+  quantidade: number;
+  valor_total: number;
+  data: string;
+  observacao?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AlocacaoDiaria = {
+  id: string;
+  data: string;
+  funcionario_id: string;
+  obra_id: string;
+  horas: number;
+  valor_hora: number;
+  observacao?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type MaterialSobra = {

@@ -5,8 +5,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { obrasApi, receitasApi, custosApi, lancamentosMaoObraApi, funcionariosApi, materiaisSobraAplicacoesApi } from '@/db/api';
-import type { Receita, Custo, LancamentoMaoObra, Funcionario, MaterialSobraAplicacao } from '@/types/types';
+import {
+  obrasApi,
+  receitasApi,
+  custosApi,
+  lancamentosMaoObraApi,
+  funcionariosApi,
+  materiaisSobraAplicacoesApi,
+  materiaisMovimentosApi,
+  alocacoesDiariasApi,
+} from '@/db/api';
+import type {
+  Receita,
+  Custo,
+  LancamentoMaoObra,
+  Funcionario,
+  MaterialSobraAplicacao,
+  MaterialMovimento,
+  AlocacaoDiaria,
+} from '@/types/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function FinancialDashboardPage() {
@@ -18,6 +35,8 @@ export default function FinancialDashboardPage() {
   const [receitas, setReceitas] = useState<Receita[]>([]);
   const [custos, setCustos] = useState<Custo[]>([]);
   const [lancamentos, setLancamentos] = useState<LancamentoMaoObra[]>([]);
+  const [alocacoes, setAlocacoes] = useState<AlocacaoDiaria[]>([]);
+  const [movimentos, setMovimentos] = useState<MaterialMovimento[]>([]);
   const [creditos, setCreditos] = useState<MaterialSobraAplicacao[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [obrasFinalizadas, setObrasFinalizadas] = useState(0);
@@ -52,17 +71,21 @@ export default function FinancialDashboardPage() {
       setObrasFinalizadas(finalizadas.length);
 
       // Load financial data by date range to avoid per-project queries
-      const [receitasData, custosData, lancamentosData, creditosData] = await Promise.all([
+      const [receitasData, custosData, lancamentosData, creditosData, movimentosData, alocacoesData] = await Promise.all([
         receitasApi.getAllByDateRange(startDate, endDate),
         custosApi.getAllByDateRange(startDate, endDate),
         lancamentosMaoObraApi.getAllByDateRange(startDate, endDate),
         materiaisSobraAplicacoesApi.getAllByDateRange(startDate, endDate),
+        materiaisMovimentosApi.getAllByDateRange(startDate, endDate),
+        alocacoesDiariasApi.getByDateRange(startDate, endDate),
       ]);
 
       setReceitas(receitasData);
       setCustos(custosData);
       setLancamentos(lancamentosData);
       setCreditos(creditosData);
+      setMovimentos(movimentosData);
+      setAlocacoes(alocacoesData);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast({
@@ -77,9 +100,13 @@ export default function FinancialDashboardPage() {
 
   // Calculations
   const totalReceitas = receitas.reduce((sum, r) => sum + Number(r.valor), 0);
-  const totalCustosMateriais = custos
+  const totalCustosMateriaisLegado = custos
     .filter((c) => c.tipo === 'material_outros')
     .reduce((sum, c) => sum + Number(c.valor), 0);
+  const totalMateriaisMovimentos = movimentos
+    .filter((mov) => mov.tipo === 'uso')
+    .reduce((sum, mov) => sum + Number(mov.valor_total), 0);
+  const totalCustosMateriais = totalCustosMateriaisLegado + totalMateriaisMovimentos;
   const totalCustosMaoObra = custos
     .filter((c) => c.tipo === 'mao_de_obra')
     .reduce((sum, c) => sum + Number(c.valor), 0);
@@ -87,10 +114,14 @@ export default function FinancialDashboardPage() {
     const func = funcionarios.find(f => f.id === l.funcionario_id);
     return sum + (func ? Number(l.quantidade) * Number(func.valor) : 0);
   }, 0);
-  const totalMaoObra = totalMaoObraLancamentos + totalCustosMaoObra;
+  const totalMaoObraAlocacoes = alocacoes.reduce(
+    (sum, a) => sum + Number(a.horas) * Number(a.valor_hora),
+    0
+  );
+  const totalMaoObra = totalMaoObraLancamentos + totalMaoObraAlocacoes + totalCustosMaoObra;
   const totalCreditos = creditos.reduce((sum, c) => sum + Number(c.valor_credito), 0);
   const resultado = totalReceitas - totalCustosMateriais - totalMaoObra + totalCreditos;
-  const breakdownCount = custos.length + lancamentos.length + creditos.length;
+  const breakdownCount = custos.length + lancamentos.length + creditos.length + movimentos.length + alocacoes.length;
 
   if (loading) {
     return (
@@ -243,10 +274,18 @@ export default function FinancialDashboardPage() {
             <CardTitle>{t('financial.costs')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {custos.length === 0 && lancamentos.length === 0 && creditos.length === 0 ? (
+            {custos.length === 0 && lancamentos.length === 0 && creditos.length === 0 && movimentos.length === 0 && alocacoes.length === 0 ? (
               <p className="text-center text-muted-foreground">{t('common.noData')}</p>
             ) : (
               <div className="space-y-2">
+                {movimentos.slice(0, 2).map((mov) => (
+                  <div key={mov.id} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {new Date(mov.data).toLocaleDateString()} - {t('financial.materialsUsage')}
+                    </span>
+                    <span className="font-semibold">${Number(mov.valor_total).toFixed(2)}</span>
+                  </div>
+                ))}
                 {custos.slice(0, 3).map((custo) => (
                   <div key={custo.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
@@ -267,6 +306,16 @@ export default function FinancialDashboardPage() {
                     </div>
                   );
                 })}
+                {alocacoes.slice(0, 2).map((alocacao) => (
+                  <div key={alocacao.id} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {new Date(alocacao.data).toLocaleDateString()} - {t('financial.laborAllocations')}
+                    </span>
+                    <span className="font-semibold">
+                      ${(Number(alocacao.horas) * Number(alocacao.valor_hora)).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
                 {creditos.slice(0, 2).map((credito) => (
                   <div key={credito.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">

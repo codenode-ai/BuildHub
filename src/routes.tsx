@@ -7,6 +7,7 @@ import FuncionariosPage from './pages/FuncionariosPage';
 import ObraDetailPage from './pages/ObraDetailPage';
 import ObraFormPage from './pages/ObraFormPage';
 import ObrasListPage from './pages/ObrasListPage';
+import MateriaisPage from './pages/MateriaisPage';
 import MateriaisSobraPage from './pages/MateriaisSobraPage';
 import FinancialDashboardPage from './pages/FinancialDashboardPage';
 import NotFound from './pages/NotFound';
@@ -74,6 +75,11 @@ const routes: RouteConfig[] = [
     name: 'Funcionários',
     path: '/funcionarios',
     element: <FuncionariosPage />
+  },
+  {
+    name: 'Materiais',
+    path: '/materiais',
+    element: <MateriaisPage />
   },
   {
     name: 'Sobras',
