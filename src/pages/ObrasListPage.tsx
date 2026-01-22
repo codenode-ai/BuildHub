@@ -4,13 +4,6 @@ import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -117,19 +110,18 @@ export default function ObrasListPage() {
             className="h-12 pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-12 w-full xl:w-[200px]">
-            <SelectValue placeholder={t('common.filter')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('common.filter')}</SelectItem>
-            <SelectItem value="orcamento">{t('status.orcamento')}</SelectItem>
-            <SelectItem value="a_iniciar">{t('status.a_iniciar')}</SelectItem>
-            <SelectItem value="em_andamento">{t('status.em_andamento')}</SelectItem>
-            <SelectItem value="paralisada">{t('status.paralisada')}</SelectItem>
-            <SelectItem value="finalizada">{t('status.finalizada')}</SelectItem>
-          </SelectContent>
-        </Select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm xl:w-[200px]"
+        >
+          <option value="all">{t('common.filter')}</option>
+          <option value="orcamento">{t('status.orcamento')}</option>
+          <option value="a_iniciar">{t('status.a_iniciar')}</option>
+          <option value="em_andamento">{t('status.em_andamento')}</option>
+          <option value="paralisada">{t('status.paralisada')}</option>
+          <option value="finalizada">{t('status.finalizada')}</option>
+        </select>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">

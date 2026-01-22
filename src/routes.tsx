@@ -8,7 +8,6 @@ import ObraDetailPage from './pages/ObraDetailPage';
 import ObraFormPage from './pages/ObraFormPage';
 import ObrasListPage from './pages/ObrasListPage';
 import MateriaisPage from './pages/MateriaisPage';
-import MateriaisSobraPage from './pages/MateriaisSobraPage';
 import FinancialDashboardPage from './pages/FinancialDashboardPage';
 import NotFound from './pages/NotFound';
 import type { ReactNode } from 'react';
@@ -80,11 +79,6 @@ const routes: RouteConfig[] = [
     name: 'Materiais',
     path: '/materiais',
     element: <MateriaisPage />
-  },
-  {
-    name: 'Sobras',
-    path: '/sobras',
-    element: <MateriaisSobraPage />
   },
   {
     name: 'Financeiro',

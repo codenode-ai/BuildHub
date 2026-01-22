@@ -1,17 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Plus, Search, Building2, CheckCircle2, FolderOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -21,12 +14,6 @@ import {
 } from '@/db/api';
 import type { ObraWithCliente, StatusObra, AlocacaoDiaria, Funcionario } from '@/types/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
   Table,
@@ -57,6 +44,7 @@ const formatDateInput = (date: Date) => date.toISOString().split('T')[0];
 export default function DashboardPage() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const location = useLocation();
   const [obras, setObras] = useState<ObraWithCliente[]>([]);
   const [filteredObras, setFilteredObras] = useState<ObraWithCliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,21 +54,25 @@ export default function DashboardPage() {
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [alocacoes, setAlocacoes] = useState<AlocacaoDiaria[]>([]);
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
-  const [allocationDialog, setAllocationDialog] = useState({
-    open: false,
-    data: new Date(),
-    funcionarioId: '',
-  });
+  const [allocationSelection, setAllocationSelection] = useState<{
+    data: Date;
+    funcionarioId: string;
+  } | null>(null);
   const [allocationForm, setAllocationForm] = useState({
     obra_id: '',
     horas: '',
     observacao: '',
   });
   const weekDates = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
+  const [alocacoesUnavailable, setAlocacoesUnavailable] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    setAllocationSelection(null);
+  }, [location.pathname]);
 
   useEffect(() => {
     loadAlocacoes();
@@ -115,19 +107,23 @@ export default function DashboardPage() {
       const end = formatDateInput(addDays(weekStart, 6));
       const data = await alocacoesDiariasApi.getByDateRange(start, end);
       setAlocacoes(data);
+      setAlocacoesUnavailable(false);
     } catch (error) {
       console.error('Erro ao carregar alocações:', error);
+      setAlocacoes([]);
+      setAlocacoesUnavailable(true);
     }
   };
 
   const openAllocation = (date: Date, funcionarioId: string) => {
-    setAllocationDialog({ open: true, data: date, funcionarioId });
+    setAllocationSelection({ data: date, funcionarioId });
     setAllocationForm({ obra_id: '', horas: '', observacao: '' });
   };
 
   const handleAllocation = async (e: React.FormEvent) => {
     e.preventDefault();
-    const funcionario = funcionarios.find((item) => item.id === allocationDialog.funcionarioId);
+    if (!allocationSelection) return;
+    const funcionario = funcionarios.find((item) => item.id === allocationSelection.funcionarioId);
     if (!funcionario) return;
 
     if (!allocationForm.obra_id || !allocationForm.horas) {
@@ -137,15 +133,15 @@ export default function DashboardPage() {
 
     try {
       await alocacoesDiariasApi.create({
-        data: formatDateInput(allocationDialog.data),
-        funcionario_id: allocationDialog.funcionarioId,
+        data: formatDateInput(allocationSelection.data),
+        funcionario_id: allocationSelection.funcionarioId,
         obra_id: allocationForm.obra_id,
         horas: Number(allocationForm.horas),
         valor_hora: Number(funcionario.valor),
         observacao: allocationForm.observacao || undefined,
       });
       toast({ title: 'Sucesso', description: t('messages.saveSuccess') });
-      setAllocationDialog({ open: false, data: new Date(), funcionarioId: '' });
+      setAllocationSelection(null);
       loadAlocacoes();
     } catch (error) {
       console.error('Erro ao salvar alocação:', error);
@@ -238,7 +234,11 @@ export default function DashboardPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {funcionarios.length === 0 ? (
+          {alocacoesUnavailable ? (
+            <p className="text-center text-muted-foreground">
+              Tabela de alocacoes nao encontrada. Aplique a migracao `20250121_add_materials_and_allocations.sql`.
+            </p>
+          ) : funcionarios.length === 0 ? (
             <p className="text-center text-muted-foreground">{t('common.noData')}</p>
           ) : (
             <Table>
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                 {funcionarios.map((funcionario) => (
                   <TableRow key={funcionario.id}>
                     <TableCell className="font-medium">{funcionario.nome}</TableCell>
-                    {weekDates.map((date) => {
+                  {weekDates.map((date) => {
                       const dayKey = formatDateInput(date);
                       const dayAllocations = alocacoes.filter(
                         (item) =>
@@ -307,6 +307,70 @@ export default function DashboardPage() {
               </TableBody>
             </Table>
           )}
+
+          {allocationSelection && (
+            <div className="mt-6 rounded-lg border border-border p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('team.employee')}</p>
+                  <p className="font-semibold">
+                    {funcionarios.find((item) => item.id === allocationSelection.funcionarioId)?.nome || ''}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDateInput(allocationSelection.data)}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setAllocationSelection(null)}>
+                  {t('common.cancel')}
+                </Button>
+              </div>
+              <form onSubmit={handleAllocation} className="grid gap-4 xl:grid-cols-4">
+                <div className="xl:col-span-2 space-y-2">
+                  <Label htmlFor="obra_id">{t('projects.title')} *</Label>
+                  <select
+                    id="obra_id"
+                    value={allocationForm.obra_id}
+                    onChange={(e) => setAllocationForm({ ...allocationForm, obra_id: e.target.value })}
+                    className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    required
+                  >
+                    <option value="">{t('projects.title')}</option>
+                    {obras.map((obra) => (
+                      <option key={obra.id} value={obra.id}>
+                        {obra.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="horas">{t('allocations.hours')} *</Label>
+                  <Input
+                    id="horas"
+                    type="number"
+                    step="0.5"
+                    value={allocationForm.horas}
+                    onChange={(e) => setAllocationForm({ ...allocationForm, horas: e.target.value })}
+                    required
+                    className="h-12"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="observacao">{t('allocations.note')}</Label>
+                  <Input
+                    id="observacao"
+                    value={allocationForm.observacao}
+                    onChange={(e) => setAllocationForm({ ...allocationForm, observacao: e.target.value })}
+                    className="h-12"
+                  />
+                </div>
+                <div className="xl:col-span-4 flex justify-end">
+                  <Button type="submit" size="lg">
+                    {t('common.save')}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -352,19 +416,18 @@ export default function DashboardPage() {
             className="h-12 pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-12 w-full xl:w-[200px]">
-            <SelectValue placeholder={t('common.filter')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('common.filter')}</SelectItem>
-            <SelectItem value="orcamento">{t('status.orcamento')}</SelectItem>
-            <SelectItem value="a_iniciar">{t('status.a_iniciar')}</SelectItem>
-            <SelectItem value="em_andamento">{t('status.em_andamento')}</SelectItem>
-            <SelectItem value="paralisada">{t('status.paralisada')}</SelectItem>
-            <SelectItem value="finalizada">{t('status.finalizada')}</SelectItem>
-          </SelectContent>
-        </Select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm xl:w-[200px]"
+        >
+          <option value="all">{t('common.filter')}</option>
+          <option value="orcamento">{t('status.orcamento')}</option>
+          <option value="a_iniciar">{t('status.a_iniciar')}</option>
+          <option value="em_andamento">{t('status.em_andamento')}</option>
+          <option value="paralisada">{t('status.paralisada')}</option>
+          <option value="finalizada">{t('status.finalizada')}</option>
+        </select>
       </div>
 
       {/* Projects List */}
@@ -410,82 +473,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <Dialog
-        open={allocationDialog.open}
-        onOpenChange={(open) =>
-          setAllocationDialog((current) => ({ ...current, open }))
-        }
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('allocations.new')}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAllocation} className="space-y-4">
-            <div className="space-y-2">
-              <Label>{t('team.employee')}</Label>
-              <Input
-                value={
-                  funcionarios.find((item) => item.id === allocationDialog.funcionarioId)?.nome || ''
-                }
-                disabled
-                className="h-12"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>{t('common.date')}</Label>
-              <Input value={formatDateInput(allocationDialog.data)} disabled className="h-12" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="obra_id">{t('projects.title')} *</Label>
-              <Select
-                value={allocationForm.obra_id}
-                onValueChange={(value) => setAllocationForm({ ...allocationForm, obra_id: value })}
-                required
-              >
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder={t('projects.title')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {obras.map((obra) => (
-                    <SelectItem key={obra.id} value={obra.id}>
-                      {obra.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="horas">{t('allocations.hours')} *</Label>
-              <Input
-                id="horas"
-                type="number"
-                step="0.5"
-                value={allocationForm.horas}
-                onChange={(e) => setAllocationForm({ ...allocationForm, horas: e.target.value })}
-                required
-                className="h-12"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="observacao">{t('allocations.note')}</Label>
-              <Input
-                id="observacao"
-                value={allocationForm.observacao}
-                onChange={(e) => setAllocationForm({ ...allocationForm, observacao: e.target.value })}
-                className="h-12"
-              />
-            </div>
-            <div className="flex gap-4">
-              <Button type="submit" size="lg" className="flex-1">
-                {t('common.save')}
-              </Button>
-              <Button type="button" variant="outline" size="lg" className="flex-1" onClick={() => setAllocationDialog({ open: false, data: new Date(), funcionarioId: '' })}>
-                {t('common.cancel')}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

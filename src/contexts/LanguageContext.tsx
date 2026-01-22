@@ -58,7 +58,7 @@ const translations = {
     'nav.dashboard': 'Dashboard',
     'nav.projects': 'Obras',
     'nav.clients': 'Clientes',
-    'nav.employees': 'Funcionários',
+    'nav.employees': 'Funcionarios',
     'nav.materials': 'Materiais',
     'nav.leftovers': 'Sobras',
     'nav.financial': 'Financeiro',
@@ -99,7 +99,7 @@ const translations = {
 
     // Project Status
     'status.orcamento': 'Orçamento',
-    'status.a_iniciar': 'A Iniciar',
+    'status.a_iniciar': 'Iniciar',
     'status.em_andamento': 'Em Andamento',
     'status.paralisada': 'Paralisada',
     'status.finalizada': 'Finalizada',
@@ -157,7 +157,7 @@ const translations = {
     'financial.laborAllocations': 'Alocações de Mão de Obra',
 
     // Employees
-    'employees.title': 'Funcionários',
+    'employees.title': 'Funcionarios',
     'employees.new': 'Novo Funcionário',
     'employees.edit': 'Editar Funcionário',
     'employees.name': 'Nome',
@@ -173,7 +173,7 @@ const translations = {
     'materials.new': 'Novo Material',
     'materials.name': 'Nome do Material',
     'materials.unit': 'Unidade',
-    'materials.referencePrice': 'Preço de Referência',
+    'materials.referencePrice': 'Preco total',
     'materials.deleteConfirm': 'Tem certeza que deseja excluir este material?',
 
     // Allocations
@@ -273,7 +273,7 @@ const translations = {
     'nav.dashboard': 'Dashboard',
     'nav.projects': 'Projects',
     'nav.clients': 'Clients',
-    'nav.employees': 'Employees',
+    'nav.employees': 'Funcionarios',
     'nav.materials': 'Materials',
     'nav.leftovers': 'Leftovers',
     'nav.financial': 'Financial',
@@ -372,14 +372,14 @@ const translations = {
     'financial.laborAllocations': 'Labor Allocations',
 
     // Employees
-    'employees.title': 'Employees',
+    'employees.title': 'Funcionarios',
     'employees.new': 'New Employee',
     'employees.edit': 'Edit Employee',
     'employees.name': 'Name',
     'employees.chargeType': 'Charge Type',
     'employees.hourly': 'Hourly',
     'employees.daily': 'Daily',
-    'employees.rate': 'Rate',
+    'employees.rate': 'Value',
     'employees.phone': 'Phone',
     'employees.deleteConfirm': 'Are you sure you want to delete this employee?',
 
@@ -388,7 +388,7 @@ const translations = {
     'materials.new': 'New Material',
     'materials.name': 'Material Name',
     'materials.unit': 'Unit',
-    'materials.referencePrice': 'Reference Price',
+    'materials.referencePrice': 'Total price',
     'materials.deleteConfirm': 'Are you sure you want to delete this material?',
 
     // Allocations

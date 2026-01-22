@@ -25,6 +25,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { materiaisApi } from '@/db/api';
 import type { Material } from '@/types/types';
+import { MateriaisSobraSection } from '@/pages/MateriaisSobraPage';
 
 export default function MateriaisPage() {
   const { t } = useLanguage();
@@ -38,6 +39,10 @@ export default function MateriaisPage() {
     nome: '',
     unidade: '',
     preco_referencia: '',
+  });
+  const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
   });
 
   useEffect(() => {
@@ -147,7 +152,9 @@ export default function MateriaisPage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-lg">{material.nome}</CardTitle>
+                    <CardTitle className="truncate text-lg" title={material.nome}>
+                      {material.nome}
+                    </CardTitle>
                     <p className="text-sm text-muted-foreground">
                       {material.unidade || t('materials.unit')}
                     </p>
@@ -166,7 +173,7 @@ export default function MateriaisPage() {
                 <div className="text-sm">
                   <span className="text-muted-foreground">{t('materials.referencePrice')}:</span>{' '}
                   <span className="font-semibold">
-                    {material.preco_referencia ? `$${material.preco_referencia.toFixed(2)}` : '-'}
+                    {material.preco_referencia ? currencyFormatter.format(material.preco_referencia) : '-'}
                   </span>
                 </div>
               </CardContent>
@@ -237,6 +244,10 @@ export default function MateriaisPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <div className="border-t border-border pt-6">
+        <MateriaisSobraSection showHeader={false} />
+      </div>
     </div>
   );
 }

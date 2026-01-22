@@ -6,13 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Table,
   TableBody,
   TableCell,
@@ -47,7 +40,11 @@ type ApplyDialogState = {
   material?: MaterialSobra;
 };
 
-export default function MateriaisSobraPage() {
+type MateriaisSobraSectionProps = {
+  showHeader?: boolean;
+};
+
+export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSectionProps) {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [materiais, setMateriais] = useState<MaterialSobra[]>([]);
@@ -224,13 +221,23 @@ export default function MateriaisSobraPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <h1 className="text-2xl font-bold xl:text-3xl">{t('leftovers.title')}</h1>
-        <Button size="lg" onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 h-5 w-5" />
-          {t('leftovers.new')}
-        </Button>
-      </div>
+      {showHeader ? (
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <h1 className="text-2xl font-bold xl:text-3xl">{t('leftovers.title')}</h1>
+          <Button size="lg" onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-2 h-5 w-5" />
+            {t('leftovers.new')}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <h2 className="text-xl font-semibold">{t('leftovers.title')}</h2>
+          <Button size="lg" onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-2 h-5 w-5" />
+            {t('leftovers.new')}
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -353,21 +360,19 @@ export default function MateriaisSobraPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="obra_origem_id">{t('leftovers.originWork')}</Label>
-              <Select
+              <select
+                id="obra_origem_id"
                 value={form.obra_origem_id}
-                onValueChange={(value) => setForm({ ...form, obra_origem_id: value })}
+                onChange={(e) => setForm({ ...form, obra_origem_id: e.target.value })}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder={t('leftovers.originWork')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {obras.map((obra) => (
-                    <SelectItem key={obra.id} value={obra.id}>
-                      {obra.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">{t('leftovers.originWork')}</option>
+                {obras.map((obra) => (
+                  <option key={obra.id} value={obra.id}>
+                    {obra.nome}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex gap-4">
               <Button type="submit" size="lg" className="flex-1">
@@ -389,22 +394,20 @@ export default function MateriaisSobraPage() {
           <form onSubmit={handleApply} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="obra_destino_id">{t('leftovers.destinationWork')} *</Label>
-              <Select
+              <select
+                id="obra_destino_id"
                 value={applyForm.obra_destino_id}
-                onValueChange={(value) => setApplyForm({ ...applyForm, obra_destino_id: value })}
+                onChange={(e) => setApplyForm({ ...applyForm, obra_destino_id: e.target.value })}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
                 required
               >
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder={t('leftovers.destinationWork')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {obras.map((obra) => (
-                    <SelectItem key={obra.id} value={obra.id}>
-                      {obra.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">{t('leftovers.destinationWork')}</option>
+                {obras.map((obra) => (
+                  <option key={obra.id} value={obra.id}>
+                    {obra.nome}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid gap-4 xl:grid-cols-2">
               <div className="space-y-2">
@@ -474,4 +477,8 @@ export default function MateriaisSobraPage() {
       </AlertDialog>
     </div>
   );
+}
+
+export default function MateriaisSobraPage() {
+  return <MateriaisSobraSection />;
 }

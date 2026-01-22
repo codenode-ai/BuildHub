@@ -22,13 +22,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { funcionariosApi } from '@/db/api';
@@ -118,7 +111,7 @@ export default function FuncionariosPage() {
       setEditingFuncionario(funcionario);
       setFormData({
         nome: funcionario.nome,
-        tipo_cobranca: funcionario.tipo_cobranca,
+        tipo_cobranca: 'hora',
         valor: funcionario.valor.toString(),
         telefone: funcionario.telefone || '',
         observacoes: funcionario.observacoes || '',
@@ -221,9 +214,7 @@ export default function FuncionariosPage() {
                   <div>
                     <CardTitle className="text-lg">{funcionario.nome}</CardTitle>
                     <Badge variant="outline" className="mt-2">
-                      {funcionario.tipo_cobranca === 'hora'
-                        ? t('employees.hourly')
-                        : t('employees.daily')}
+                      {t('employees.hourly')}
                     </Badge>
                   </div>
                   <div className="flex gap-2">
@@ -245,8 +236,7 @@ export default function FuncionariosPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('employees.rate')}:</span>
                     <span className="font-semibold">
-                      ${funcionario.valor.toFixed(2)}/
-                      {funcionario.tipo_cobranca === 'hora' ? t('team.hours') : t('team.days')}
+                      ${funcionario.valor.toFixed(2)}/{t('team.hours')}
                     </span>
                   </div>
                   {funcionario.telefone && (
@@ -284,34 +274,17 @@ export default function FuncionariosPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="tipo_cobranca">
-                {t('employees.chargeType')} <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                value={formData.tipo_cobranca}
-                onValueChange={(value: TipoCobranca) =>
-                  setFormData({ ...formData, tipo_cobranca: value })
-                }
-              >
-                <SelectTrigger className="h-12">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hora">{t('employees.hourly')}</SelectItem>
-                  <SelectItem value="dia">{t('employees.daily')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <input type="hidden" name="tipo_cobranca" value="hora" />
 
             <div className="space-y-2">
               <Label htmlFor="valor">
-                {t('employees.rate')} <span className="text-destructive">*</span>
+                Valor <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="valor"
                 type="number"
                 step="0.01"
+                placeholder="Valor"
                 value={formData.valor}
                 onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
                 required

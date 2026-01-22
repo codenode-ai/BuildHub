@@ -6,13 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { obrasApi, clientesApi } from '@/db/api';
@@ -152,41 +145,36 @@ export default function ObraFormPage() {
               <Label htmlFor="cliente_id">
                 {t('projects.client')} <span className="text-destructive">*</span>
               </Label>
-              <Select
+              <select
+                id="cliente_id"
                 value={formData.cliente_id}
-                onValueChange={(value) => setFormData({ ...formData, cliente_id: value })}
+                onChange={(e) => setFormData({ ...formData, cliente_id: e.target.value })}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
                 required
               >
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder={t('projects.client')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientes.map((cliente) => (
-                    <SelectItem key={cliente.id} value={cliente.id}>
-                      {cliente.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">{t('projects.client')}</option>
+                {clientes.map((cliente) => (
+                  <option key={cliente.id} value={cliente.id}>
+                    {cliente.nome}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="status">{t('projects.status')}</Label>
-              <Select
+              <select
+                id="status"
                 value={formData.status}
-                onValueChange={(value: StatusObra) => setFormData({ ...formData, status: value })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as StatusObra })}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
-                <SelectTrigger className="h-12">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="orcamento">{t('status.orcamento')}</SelectItem>
-                  <SelectItem value="a_iniciar">{t('status.a_iniciar')}</SelectItem>
-                  <SelectItem value="em_andamento">{t('status.em_andamento')}</SelectItem>
-                  <SelectItem value="paralisada">{t('status.paralisada')}</SelectItem>
-                  <SelectItem value="finalizada">{t('status.finalizada')}</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="orcamento">{t('status.orcamento')}</option>
+                <option value="a_iniciar">{t('status.a_iniciar')}</option>
+                <option value="em_andamento">{t('status.em_andamento')}</option>
+                <option value="paralisada">{t('status.paralisada')}</option>
+                <option value="finalizada">{t('status.finalizada')}</option>
+              </select>
             </div>
 
             {formData.status === 'paralisada' && (

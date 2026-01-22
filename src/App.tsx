@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import routes from './routes';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 import { AuthProvider } from '@/contexts/AuthContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
@@ -15,18 +16,22 @@ function AppContent() {
   return (
     <>
       {isLoginPage ? (
-        <Routes>
-          {routes.map((route, index) => (
-            <Route key={index} path={route.path} element={route.element} />
-          ))}
-        </Routes>
-      ) : (
-        <MainLayout>
+        <ErrorBoundary>
           <Routes>
             {routes.map((route, index) => (
               <Route key={index} path={route.path} element={route.element} />
             ))}
           </Routes>
+        </ErrorBoundary>
+      ) : (
+        <MainLayout>
+          <ErrorBoundary>
+            <Routes>
+              {routes.map((route, index) => (
+                <Route key={index} path={route.path} element={route.element} />
+              ))}
+            </Routes>
+          </ErrorBoundary>
         </MainLayout>
       )}
       <Toaster />

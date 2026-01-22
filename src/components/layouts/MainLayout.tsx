@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Building2, Users, Briefcase, DollarSign, LayoutDashboard, Menu, LogOut, Globe, PackageOpen, Boxes } from 'lucide-react';
+import { Building2, Users, Briefcase, DollarSign, LayoutDashboard, Menu, LogOut, Globe, Boxes, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -22,9 +22,25 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const { language, setLanguage, t } = useLanguage();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window === 'undefined') return 'light';
+    const stored = window.localStorage.getItem('theme');
+    if (stored === 'dark' || stored === 'light') return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ password: '', confirmPassword: '' });
   const [savingPassword, setSavingPassword] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    window.localStorage.setItem('theme', theme);
+  }, [theme]);
 
   const navigation = [
     { name: t('nav.dashboard'), href: '/', icon: LayoutDashboard },
@@ -32,7 +48,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { name: t('nav.clients'), href: '/clientes', icon: Users },
     { name: t('nav.employees'), href: '/funcionarios', icon: Briefcase },
     { name: t('nav.materials'), href: '/materiais', icon: Boxes },
-    { name: t('nav.leftovers'), href: '/sobras', icon: PackageOpen },
     { name: t('nav.financial'), href: '/financeiro', icon: DollarSign },
   ];
 
@@ -134,6 +149,17 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              aria-label="Tema"
+              title="Tema"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+
             {/* Language Selector */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
