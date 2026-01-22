@@ -1,7 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import IntersectObserver from '@/components/common/IntersectObserver';
-
 import routes from './routes';
 
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -16,7 +14,6 @@ function AppContent() {
 
   return (
     <>
-      <IntersectObserver />
       {isLoginPage ? (
         <Routes>
           {routes.map((route, index) => (
