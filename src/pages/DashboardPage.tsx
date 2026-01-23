@@ -116,8 +116,31 @@ export default function DashboardPage() {
   };
 
   const openAllocation = (date: Date, funcionarioId: string) => {
+    const dayKey = formatDateInput(date);
+    const existing = alocacoes.filter(
+      (item) => item.funcionario_id === funcionarioId && item.data === dayKey
+    );
     setAllocationSelection({ data: date, funcionarioId });
-    setAllocationForm({ obra_id: '', horas: '', observacao: '' });
+    if (existing.length === 1) {
+      setAllocationForm({
+        obra_id: existing[0].obra_id,
+        horas: existing[0].horas.toString(),
+        observacao: existing[0].observacao || '',
+      });
+    } else {
+      setAllocationForm({ obra_id: '', horas: '', observacao: '' });
+    }
+  };
+
+  const handleDeleteAllocation = async (allocationId: string) => {
+    try {
+      await alocacoesDiariasApi.delete(allocationId);
+      toast({ title: 'Sucesso', description: t('messages.deleteSuccess') });
+      loadAlocacoes();
+    } catch (error) {
+      console.error('Erro ao excluir alocação:', error);
+      toast({ title: 'Erro', description: t('messages.error'), variant: 'destructive' });
+    }
   };
 
   const handleAllocation = async (e: React.FormEvent) => {
@@ -280,22 +303,19 @@ export default function DashboardPage() {
                                 {dayAllocations.map((item) => {
                                   const obra = obras.find((obraItem) => obraItem.id === item.obra_id);
                                   return (
-                                    <div key={item.id} className="rounded-md border border-border p-2 text-xs">
+                                    <button
+                                      key={item.id}
+                                      type="button"
+                                      onClick={() => openAllocation(date, funcionario.id)}
+                                      className="w-full rounded-md border border-border p-2 text-left text-xs transition-colors hover:bg-accent"
+                                    >
                                       <p className="font-semibold">{obra?.nome || t('projects.title')}</p>
                                       <p className="text-muted-foreground">
                                         {Number(item.horas).toFixed(1)}h
                                       </p>
-                                    </div>
+                                    </button>
                                   );
                                 })}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full"
-                                  onClick={() => openAllocation(date, funcionario.id)}
-                                >
-                                  {t('allocations.new')}
-                                </Button>
                               </>
                             )}
                           </div>
@@ -320,9 +340,28 @@ export default function DashboardPage() {
                     {formatDateInput(allocationSelection.data)}
                   </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setAllocationSelection(null)}>
-                  {t('common.cancel')}
-                </Button>
+                <div className="flex gap-2">
+                  {(() => {
+                    const dayKey = formatDateInput(allocationSelection.data);
+                    const existing = alocacoes.find(
+                      (item) =>
+                        item.funcionario_id === allocationSelection.funcionarioId &&
+                        item.data === dayKey
+                    );
+                    return existing ? (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteAllocation(existing.id)}
+                      >
+                        {t('common.delete')}
+                      </Button>
+                    ) : null;
+                  })()}
+                  <Button variant="outline" size="sm" onClick={() => setAllocationSelection(null)}>
+                    {t('common.cancel')}
+                  </Button>
+                </div>
               </div>
               <form onSubmit={handleAllocation} className="grid gap-4 xl:grid-cols-4">
                 <div className="xl:col-span-2 space-y-2">

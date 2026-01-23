@@ -173,7 +173,12 @@ const translations = {
     'materials.new': 'Novo Material',
     'materials.name': 'Nome do Material',
     'materials.unit': 'Unidade',
-    'materials.referencePrice': 'Preco total',
+    'materials.referencePrice': 'Preco unitario',
+    'materials.stock': 'Estoque',
+    'materials.stockEntry': 'Entrada de estoque',
+    'materials.stockQuantity': 'Quantidade em estoque',
+    'materials.stockAvailable': 'Estoque disponivel',
+    'materials.createInline': 'Cadastrar material',
     'materials.deleteConfirm': 'Tem certeza que deseja excluir este material?',
 
     // Allocations
@@ -188,6 +193,7 @@ const translations = {
     'leftovers.available': 'Disponível',
     'leftovers.totalValue': 'Valor Total',
     'leftovers.balanceValue': 'Saldo de Valor',
+    'leftovers.material': 'Material',
     'leftovers.originWork': 'Obra de Origem',
     'leftovers.destinationWork': 'Obra de Destino',
     'leftovers.unit': 'Unidade',
@@ -388,7 +394,12 @@ const translations = {
     'materials.new': 'New Material',
     'materials.name': 'Material Name',
     'materials.unit': 'Unit',
-    'materials.referencePrice': 'Total price',
+    'materials.referencePrice': 'Unit price',
+    'materials.stock': 'Stock',
+    'materials.stockEntry': 'Stock entry',
+    'materials.stockQuantity': 'Stock quantity',
+    'materials.stockAvailable': 'Stock available',
+    'materials.createInline': 'Create material',
     'materials.deleteConfirm': 'Are you sure you want to delete this material?',
 
     // Allocations
@@ -404,6 +415,7 @@ const translations = {
     'leftovers.available': 'Available',
     'leftovers.totalValue': 'Total Value',
     'leftovers.balanceValue': 'Balance Value',
+    'leftovers.material': 'Material',
     'leftovers.originWork': 'Origin Project',
     'leftovers.destinationWork': 'Destination Project',
     'leftovers.unit': 'Unit',

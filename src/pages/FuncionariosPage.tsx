@@ -278,13 +278,13 @@ export default function FuncionariosPage() {
 
             <div className="space-y-2">
               <Label htmlFor="valor">
-                Valor <span className="text-destructive">*</span>
+                Valor por hora <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="valor"
                 type="number"
                 step="0.01"
-                placeholder="Valor"
+                placeholder="Valor por hora"
                 value={formData.valor}
                 onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
                 required

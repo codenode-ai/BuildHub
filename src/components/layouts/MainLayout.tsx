@@ -161,22 +161,27 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </Button>
 
             {/* Language Selector */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Globe className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setLanguage('pt')}>
-                  Português {language === 'pt' && '✓'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLanguage('en')}>
-                  English {language === 'en' && '✓'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
+            <div className="flex items-center gap-1 rounded-md border border-border p-1">
+              <Button
+                variant={language === 'pt' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setLanguage('pt')}
+                aria-label="Portugues"
+                title="Portugues"
+              >
+                <Globe className="mr-2 h-4 w-4" />
+                PT
+              </Button>
+              <Button
+                variant={language === 'en' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setLanguage('en')}
+                aria-label="English"
+                title="English"
+              >
+                EN
+              </Button>
+            </div>
             {/* User Menu */}
             {user && (
               <DropdownMenu>
@@ -264,3 +269,4 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

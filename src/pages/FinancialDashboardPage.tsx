@@ -110,10 +110,12 @@ export default function FinancialDashboardPage() {
   const totalCustosMaoObra = custos
     .filter((c) => c.tipo === 'mao_de_obra')
     .reduce((sum, c) => sum + Number(c.valor), 0);
-  const totalMaoObraLancamentos = lancamentos.reduce((sum, l) => {
-    const func = funcionarios.find(f => f.id === l.funcionario_id);
-    return sum + (func ? Number(l.quantidade) * Number(func.valor) : 0);
-  }, 0);
+  const totalMaoObraLancamentos = alocacoes.length > 0
+    ? 0
+    : lancamentos.reduce((sum, l) => {
+        const func = funcionarios.find(f => f.id === l.funcionario_id);
+        return sum + (func ? Number(l.quantidade) * Number(func.valor) : 0);
+      }, 0);
   const totalMaoObraAlocacoes = alocacoes.reduce(
     (sum, a) => sum + Number(a.horas) * Number(a.valor_hora),
     0

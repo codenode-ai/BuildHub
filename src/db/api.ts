@@ -217,6 +217,15 @@ export const materiaisApi = {
 
 // Materiais Movimentos API
 export const materiaisMovimentosApi = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('materiais_movimentos')
+      .select('*')
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
   async getByObraId(obraId: string) {
     const { data, error } = await supabase
       .from('materiais_movimentos')
@@ -300,7 +309,7 @@ export const alocacoesDiariasApi = {
 
     const { data, error } = await supabase
       .from('alocacoes_diarias')
-      .insert({ ...alocacao, user_id: user.id })
+      .upsert({ ...alocacao, user_id: user.id }, { onConflict: 'data,funcionario_id,obra_id' })
       .select()
       .single();
     if (error) throw error;

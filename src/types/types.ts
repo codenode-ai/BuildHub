@@ -144,7 +144,7 @@ export type TipoMovimentoMaterial = 'uso' | 'sobra' | 'ajuste';
 
 export type MaterialMovimento = {
   id: string;
-  obra_id: string;
+  obra_id?: string | null;
   material_id: string;
   tipo: TipoMovimentoMaterial;
   quantidade: number;
@@ -175,6 +175,8 @@ export type MaterialSobra = {
   unidade?: string;
   quantidade: number;
   valor_total: number;
+  material_id?: string | null;
+  movimento_estoque_id?: string | null;
   obra_origem_id?: string | null;
   user_id: string;
   created_at: string;

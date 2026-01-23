@@ -32,8 +32,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { materiaisSobraApi, materiaisSobraAplicacoesApi, obrasApi } from '@/db/api';
-import type { MaterialSobra, MaterialSobraAplicacao, Obra } from '@/types/types';
+import { materiaisApi, materiaisMovimentosApi, materiaisSobraApi, materiaisSobraAplicacoesApi, obrasApi } from '@/db/api';
+import type { Material, MaterialSobra, MaterialSobraAplicacao, Obra } from '@/types/types';
 
 type ApplyDialogState = {
   open: boolean;
@@ -48,6 +48,7 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
   const { t } = useLanguage();
   const { toast } = useToast();
   const [materiais, setMateriais] = useState<MaterialSobra[]>([]);
+  const [materiaisCatalogo, setMateriaisCatalogo] = useState<Material[]>([]);
   const [aplicacoes, setAplicacoes] = useState<MaterialSobraAplicacao[]>([]);
   const [obras, setObras] = useState<Obra[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,11 +57,9 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    descricao: '',
-    unidade: '',
     quantidade: '',
-    valor_total: '',
     obra_origem_id: '',
+    material_id: '',
   });
 
   const [applyForm, setApplyForm] = useState({
@@ -85,6 +84,8 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
       setMateriais(materiaisData);
       setAplicacoes(aplicacoesData);
       setObras(obrasData);
+      const materiaisCatalogoData = await materiaisApi.getAll();
+      setMateriaisCatalogo(materiaisCatalogoData);
     } catch (error) {
       console.error('Erro ao carregar sobras:', error);
       toast({
@@ -113,17 +114,37 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const data = {
-        descricao: form.descricao,
-        unidade: form.unidade || undefined,
-        quantidade: Number(form.quantidade),
-        valor_total: Number(form.valor_total),
-        obra_origem_id: form.obra_origem_id || undefined,
-      };
-      await materiaisSobraApi.create(data);
+      const materialSelecionado = materiaisCatalogo.find((item) => item.id === form.material_id);
+      if (!materialSelecionado || !materialSelecionado.preco_referencia) {
+        toast({ title: 'Erro', description: t('materials.referencePrice'), variant: 'destructive' });
+        return;
+      }
+      if (!form.material_id || !form.obra_origem_id) {
+        toast({ title: 'Erro', description: t('messages.required'), variant: 'destructive' });
+        return;
+      }
+      const quantidade = Number(form.quantidade);
+      const valorTotal = quantidade * Number(materialSelecionado.preco_referencia);
+      const sobraCriada = await materiaisSobraApi.create({
+        descricao: materialSelecionado.nome,
+        quantidade,
+        valor_total: valorTotal,
+        obra_origem_id: form.obra_origem_id,
+        material_id: form.material_id,
+      });
+      const movimento = await materiaisMovimentosApi.create({
+        material_id: form.material_id,
+        tipo: 'ajuste',
+        quantidade,
+        valor_total: valorTotal,
+        data: new Date().toISOString().split('T')[0],
+        observacao: `Sobra da obra ${form.obra_origem_id}`,
+        obra_id: null,
+      });
+      await materiaisSobraApi.update(sobraCriada.id, { movimento_estoque_id: movimento.id });
       toast({ title: 'Sucesso', description: t('messages.saveSuccess') });
       setCreateOpen(false);
-      setForm({ descricao: '', unidade: '', quantidade: '', valor_total: '', obra_origem_id: '' });
+      setForm({ quantidade: '', obra_origem_id: '', material_id: '' });
       loadData();
     } catch (error) {
       console.error('Erro ao criar sobra:', error);
@@ -183,6 +204,17 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
         valor_credito: valorCredito,
         data: applyForm.data,
       });
+      if (material.material_id) {
+        await materiaisMovimentosApi.create({
+          material_id: material.material_id,
+          tipo: 'uso',
+          quantidade,
+          valor_total: valorCredito,
+          data: applyForm.data,
+          observacao: 'Uso de sobra',
+          obra_id: applyForm.obra_destino_id,
+        });
+      }
       toast({ title: 'Sucesso', description: t('messages.saveSuccess') });
       setApplyDialog({ open: false });
       loadData();
@@ -195,6 +227,10 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
+      const sobra = materiais.find((item) => item.id === deleteId);
+      if (sobra?.movimento_estoque_id) {
+        await materiaisMovimentosApi.delete(sobra.movimento_estoque_id);
+      }
       await materiaisSobraApi.delete(deleteId);
       toast({ title: 'Sucesso', description: t('messages.deleteSuccess') });
       loadData();
@@ -250,8 +286,7 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('common.description')}</TableHead>
-                  <TableHead>{t('leftovers.unit')}</TableHead>
+                  <TableHead>{t('leftovers.material')}</TableHead>
                   <TableHead className="text-right">{t('leftovers.quantity')}</TableHead>
                   <TableHead className="text-right">{t('leftovers.available')}</TableHead>
                   <TableHead className="text-right">{t('leftovers.totalValue')}</TableHead>
@@ -266,10 +301,12 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
                   const availableQty = Number(material.quantidade) - applied.quantidade;
                   const availableValue = Number(material.valor_total) - applied.valor;
                   const obra = material.obra_origem_id ? obrasMap.get(material.obra_origem_id) : undefined;
+                  const materialCatalogo = material.material_id
+                    ? materiaisCatalogo.find((item) => item.id === material.material_id)
+                    : undefined;
                   return (
                     <TableRow key={material.id}>
-                      <TableCell>{material.descricao}</TableCell>
-                      <TableCell>{material.unidade || '-'}</TableCell>
+                      <TableCell>{materialCatalogo?.nome || material.descricao}</TableCell>
                       <TableCell className="text-right">{Number(material.quantidade).toFixed(2)}</TableCell>
                       <TableCell className="text-right">{availableQty.toFixed(2)}</TableCell>
                       <TableCell className="text-right">${Number(material.valor_total).toFixed(2)}</TableCell>
@@ -314,25 +351,23 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="descricao">{t('common.description')} *</Label>
-              <Input
-                id="descricao"
-                value={form.descricao}
-                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+              <Label htmlFor="material_id">{t('leftovers.material')} *</Label>
+              <select
+                id="material_id"
+                value={form.material_id}
+                onChange={(e) => setForm({ ...form, material_id: e.target.value })}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
                 required
-                className="h-12"
-              />
+              >
+                <option value="">{t('materials.title')}</option>
+                {materiaisCatalogo.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.nome}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid gap-4 xl:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="unidade">{t('leftovers.unit')}</Label>
-                <Input
-                  id="unidade"
-                  value={form.unidade}
-                  onChange={(e) => setForm({ ...form, unidade: e.target.value })}
-                  className="h-12"
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="quantidade">{t('leftovers.quantity')} *</Label>
                 <Input
@@ -345,18 +380,20 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
                   className="h-12"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="valor_total">{t('leftovers.totalValue')} *</Label>
-              <Input
-                id="valor_total"
-                type="number"
-                step="0.01"
-                value={form.valor_total}
-                onChange={(e) => setForm({ ...form, valor_total: e.target.value })}
-                required
-                className="h-12"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="valor_total">{t('leftovers.totalValue')}</Label>
+                <Input
+                  id="valor_total"
+                  value={(() => {
+                    const materialSelecionado = materiaisCatalogo.find((item) => item.id === form.material_id);
+                    const preco = materialSelecionado?.preco_referencia || 0;
+                    const quantidade = Number(form.quantidade) || 0;
+                    return preco && quantidade ? (preco * quantidade).toFixed(2) : '';
+                  })()}
+                  readOnly
+                  className="h-12"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="obra_origem_id">{t('leftovers.originWork')}</Label>
