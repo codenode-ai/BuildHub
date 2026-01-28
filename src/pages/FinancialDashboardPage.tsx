@@ -4,6 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -53,6 +59,11 @@ export default function FinancialDashboardPage() {
   const [obras, setObras] = useState<{ id: string; nome: string }[]>([]);
   const [obraSelecionada, setObraSelecionada] = useState('');
   const [viewMode, setViewMode] = useState<'cards' | 'chart'>('cards');
+  const [receitasDialogOpen, setReceitasDialogOpen] = useState(false);
+  const [custosDialogOpen, setCustosDialogOpen] = useState(false);
+  const [receitasObraFiltro, setReceitasObraFiltro] = useState('');
+  const [custosObraFiltro, setCustosObraFiltro] = useState('');
+  const [custosTipoFiltro, setCustosTipoFiltro] = useState<'todos' | 'materiais' | 'mao'>('todos');
 
   useEffect(() => {
     // Set default dates (current month)
@@ -162,6 +173,51 @@ export default function FinancialDashboardPage() {
     { name: t('financial.laborCosts'), valor: totalMaoObra, color: '#e11d48' },
     { name: t('financial.result'), valor: resultado, color: resultado >= 0 ? '#2563eb' : '#dc2626' },
   ];
+  const obrasMap = new Map(obras.map((obra) => [obra.id, obra.nome]));
+  const receitasDialogItems = receitasFiltradas
+    .filter((receita) => !receitasObraFiltro || receita.obra_id === receitasObraFiltro);
+  const custosDialogItems = [
+    ...movimentosFiltrados.map((mov) => ({
+      id: mov.id,
+      data: mov.data,
+      valor: Number(mov.valor_total),
+      obra_id: mov.obra_id || '',
+      tipo: 'materiais' as const,
+      descricao: t('financial.materialsUsage'),
+    })),
+    ...custosFiltrados.map((custo) => ({
+      id: custo.id,
+      data: custo.data,
+      valor: Number(custo.valor),
+      obra_id: custo.obra_id,
+      tipo: custo.tipo === 'mao_de_obra' ? 'mao' as const : 'materiais' as const,
+      descricao: custo.descricao || (custo.tipo === 'mao_de_obra' ? t('financial.labor') : t('financial.materials')),
+    })),
+    ...lancamentosFiltrados.map((lanc) => {
+      const func = funcionarios.find(f => f.id === lanc.funcionario_id);
+      return {
+        id: lanc.id,
+        data: lanc.data,
+        valor: func ? Number(lanc.quantidade) * Number(func.valor) : 0,
+        obra_id: lanc.obra_id,
+        tipo: 'mao' as const,
+        descricao: t('financial.labor'),
+      };
+    }),
+    ...alocacoesFiltradas.map((alocacao) => ({
+      id: alocacao.id,
+      data: alocacao.data,
+      valor: Number(alocacao.horas) * Number(alocacao.valor_hora),
+      obra_id: alocacao.obra_id,
+      tipo: 'mao' as const,
+      descricao: t('financial.laborAllocations'),
+    })),
+  ];
+  const custosDialogFiltered = custosDialogItems
+    .filter((item) => !custosObraFiltro || item.obra_id === custosObraFiltro)
+    .filter((item) => custosTipoFiltro === 'todos' || item.tipo === custosTipoFiltro);
+  const totalReceitasDialog = receitasDialogItems.reduce((sum, item) => sum + item.valor, 0);
+  const totalCustosDialog = custosDialogFiltered.reduce((sum, item) => sum + item.valor, 0);
 
   if (loading) {
     return (
@@ -378,9 +434,26 @@ export default function FinancialDashboardPage() {
 
       {/* Breakdown */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <Card>
+        <Card className="cursor-pointer" onClick={() => {
+          setReceitasObraFiltro(obraSelecionada);
+          setReceitasDialogOpen(true);
+        }}>
           <CardHeader>
-            <CardTitle>{t('financial.revenues')}</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>{t('financial.revenues')}</CardTitle>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setReceitasObraFiltro(obraSelecionada);
+                  setReceitasDialogOpen(true);
+                }}
+              >
+                {t('financial.viewAll')}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {receitasFiltradas.length === 0 ? (
@@ -405,9 +478,28 @@ export default function FinancialDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer" onClick={() => {
+          setCustosObraFiltro(obraSelecionada);
+          setCustosTipoFiltro('todos');
+          setCustosDialogOpen(true);
+        }}>
           <CardHeader>
-            <CardTitle>{t('financial.costs')}</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>{t('financial.costs')}</CardTitle>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setCustosObraFiltro(obraSelecionada);
+                  setCustosTipoFiltro('todos');
+                  setCustosDialogOpen(true);
+                }}
+              >
+                {t('financial.viewAll')}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {custosFiltrados.length === 0 && lancamentosFiltrados.length === 0 && movimentosFiltrados.length === 0 && alocacoesFiltradas.length === 0 ? (
@@ -462,6 +554,131 @@ export default function FinancialDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={receitasDialogOpen} onOpenChange={setReceitasDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('financial.revenues')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4 xl:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="receitas_obra_filtro">{t('financial.filterByProject')}</Label>
+                <select
+                  id="receitas_obra_filtro"
+                  value={receitasObraFiltro}
+                  onChange={(e) => setReceitasObraFiltro(e.target.value)}
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">{t('financial.allProjects')}</option>
+                  {obras.map((obra) => (
+                    <option key={obra.id} value={obra.id}>
+                      {obra.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end justify-end">
+                <div className="rounded-md border border-border bg-muted/40 px-4 py-2 text-sm">
+                  <span className="text-muted-foreground">{t('common.total')}:</span>{' '}
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    ${totalReceitasDialog.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {receitasDialogItems.length === 0 ? (
+              <p className="text-center text-muted-foreground">{t('common.noData')}</p>
+            ) : (
+              <div className="max-h-[360px] space-y-2 overflow-y-auto pr-2">
+                {receitasDialogItems.map((receita) => (
+                  <div key={receita.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">{new Date(receita.data).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {obrasMap.get(receita.obra_id) || t('projects.title')}
+                      </p>
+                    </div>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      ${receita.valor.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={custosDialogOpen} onOpenChange={setCustosDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('financial.costs')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4 xl:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="custos_obra_filtro">{t('financial.filterByProject')}</Label>
+                <select
+                  id="custos_obra_filtro"
+                  value={custosObraFiltro}
+                  onChange={(e) => setCustosObraFiltro(e.target.value)}
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">{t('financial.allProjects')}</option>
+                  {obras.map((obra) => (
+                    <option key={obra.id} value={obra.id}>
+                      {obra.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="custos_tipo_filtro">{t('financial.filterType')}</Label>
+                <select
+                  id="custos_tipo_filtro"
+                  value={custosTipoFiltro}
+                  onChange={(e) => setCustosTipoFiltro(e.target.value as 'todos' | 'materiais' | 'mao')}
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="todos">{t('financial.filterTypeAll')}</option>
+                  <option value="materiais">{t('financial.filterTypeMaterials')}</option>
+                  <option value="mao">{t('financial.filterTypeLabor')}</option>
+                </select>
+              </div>
+              <div className="flex items-end justify-end">
+                <div className="rounded-md border border-border bg-muted/40 px-4 py-2 text-sm">
+                  <span className="text-muted-foreground">{t('common.total')}:</span>{' '}
+                  <span className="font-semibold text-rose-600 dark:text-rose-400">
+                    ${totalCustosDialog.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {custosDialogFiltered.length === 0 ? (
+              <p className="text-center text-muted-foreground">{t('common.noData')}</p>
+            ) : (
+              <div className="max-h-[360px] space-y-2 overflow-y-auto pr-2">
+                {custosDialogFiltered.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">
+                        {new Date(item.data).toLocaleDateString()} - {item.descricao}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.obra_id ? obrasMap.get(item.obra_id) || t('projects.title') : t('projects.title')}
+                      </p>
+                    </div>
+                    <span className="font-semibold text-rose-600 dark:text-rose-400">
+                      ${item.valor.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
