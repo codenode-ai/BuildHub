@@ -81,7 +81,7 @@ const routes: RouteConfig[] = [
     element: <MateriaisPage />
   },
   {
-    name: 'Financeiro',
+    name: 'Fluxo de caixa',
     path: '/financeiro',
     element: <FinancialDashboardPage />
   },

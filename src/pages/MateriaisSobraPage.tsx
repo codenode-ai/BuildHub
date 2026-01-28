@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRightLeft, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -32,13 +32,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { materiaisApi, materiaisMovimentosApi, materiaisSobraApi, materiaisSobraAplicacoesApi, obrasApi } from '@/db/api';
-import type { Material, MaterialSobra, MaterialSobraAplicacao, Obra } from '@/types/types';
-
-type ApplyDialogState = {
-  open: boolean;
-  material?: MaterialSobra;
-};
+import { materiaisApi, materiaisMovimentosApi, materiaisSobraApi, obrasApi } from '@/db/api';
+import type { Material, MaterialSobra, Obra } from '@/types/types';
 
 type MateriaisSobraSectionProps = {
   showHeader?: boolean;
@@ -49,24 +44,15 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
   const { toast } = useToast();
   const [materiais, setMateriais] = useState<MaterialSobra[]>([]);
   const [materiaisCatalogo, setMateriaisCatalogo] = useState<Material[]>([]);
-  const [aplicacoes, setAplicacoes] = useState<MaterialSobraAplicacao[]>([]);
   const [obras, setObras] = useState<Obra[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
-  const [applyDialog, setApplyDialog] = useState<ApplyDialogState>({ open: false });
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     quantidade: '',
     obra_origem_id: '',
     material_id: '',
-  });
-
-  const [applyForm, setApplyForm] = useState({
-    obra_destino_id: '',
-    quantidade: '',
-    valor_credito: '',
-    data: new Date().toISOString().split('T')[0],
   });
 
   useEffect(() => {
@@ -76,13 +62,11 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
   const loadData = async () => {
     try {
       setLoading(true);
-      const [materiaisData, aplicacoesData, obrasData] = await Promise.all([
+      const [materiaisData, obrasData] = await Promise.all([
         materiaisSobraApi.getAll(),
-        materiaisSobraAplicacoesApi.getAll(),
         obrasApi.getAll(),
       ]);
       setMateriais(materiaisData);
-      setAplicacoes(aplicacoesData);
       setObras(obrasData);
       const materiaisCatalogoData = await materiaisApi.getAll();
       setMateriaisCatalogo(materiaisCatalogoData);
@@ -104,13 +88,6 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
     return map;
   }, [obras]);
 
-  const getAppliedTotals = (materialId: string) => {
-    const applied = aplicacoes.filter((item) => item.material_sobra_id === materialId);
-    const quantidade = applied.reduce((sum, item) => sum + Number(item.quantidade), 0);
-    const valor = applied.reduce((sum, item) => sum + Number(item.valor_credito), 0);
-    return { quantidade, valor };
-  };
-
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -119,7 +96,7 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
         toast({ title: 'Erro', description: t('materials.referencePrice'), variant: 'destructive' });
         return;
       }
-      if (!form.material_id || !form.obra_origem_id) {
+      if (!form.material_id) {
         toast({ title: 'Erro', description: t('messages.required'), variant: 'destructive' });
         return;
       }
@@ -138,7 +115,7 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
         quantidade,
         valor_total: valorTotal,
         data: new Date().toISOString().split('T')[0],
-        observacao: `Sobra da obra ${form.obra_origem_id}`,
+        observacao: form.obra_origem_id ? `Sobra da obra ${form.obra_origem_id}` : 'Sobra de material',
         obra_id: null,
       });
       await materiaisSobraApi.update(sobraCriada.id, { movimento_estoque_id: movimento.id });
@@ -148,78 +125,6 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
       loadData();
     } catch (error) {
       console.error('Erro ao criar sobra:', error);
-      toast({ title: 'Erro', description: t('messages.error'), variant: 'destructive' });
-    }
-  };
-
-  const openApplyDialog = (material: MaterialSobra) => {
-    setApplyDialog({ open: true, material });
-    setApplyForm({
-      obra_destino_id: '',
-      quantidade: '',
-      valor_credito: '',
-      data: new Date().toISOString().split('T')[0],
-    });
-  };
-
-  const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const material = applyDialog.material;
-    if (!material) return;
-
-    const applied = getAppliedTotals(material.id);
-    const availableQty = Number(material.quantidade) - applied.quantidade;
-    const availableValue = Number(material.valor_total) - applied.valor;
-    const quantidade = Number(applyForm.quantidade);
-    const valorCredito = Number(applyForm.valor_credito);
-
-    if (!applyForm.obra_destino_id || quantidade <= 0 || valorCredito <= 0) {
-      toast({ title: 'Erro', description: t('messages.required'), variant: 'destructive' });
-      return;
-    }
-
-    if (quantidade > availableQty) {
-      toast({
-        title: 'Erro',
-        description: t('leftovers.exceedQuantity'),
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (valorCredito > availableValue) {
-      toast({
-        title: 'Erro',
-        description: t('leftovers.exceedValue'),
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      await materiaisSobraAplicacoesApi.create({
-        material_sobra_id: material.id,
-        obra_destino_id: applyForm.obra_destino_id,
-        quantidade,
-        valor_credito: valorCredito,
-        data: applyForm.data,
-      });
-      if (material.material_id) {
-        await materiaisMovimentosApi.create({
-          material_id: material.material_id,
-          tipo: 'uso',
-          quantidade,
-          valor_total: valorCredito,
-          data: applyForm.data,
-          observacao: 'Uso de sobra',
-          obra_id: applyForm.obra_destino_id,
-        });
-      }
-      toast({ title: 'Sucesso', description: t('messages.saveSuccess') });
-      setApplyDialog({ open: false });
-      loadData();
-    } catch (error) {
-      console.error('Erro ao aplicar sobra:', error);
       toast({ title: 'Erro', description: t('messages.error'), variant: 'destructive' });
     }
   };
@@ -288,18 +193,13 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
                 <TableRow>
                   <TableHead>{t('leftovers.material')}</TableHead>
                   <TableHead className="text-right">{t('leftovers.quantity')}</TableHead>
-                  <TableHead className="text-right">{t('leftovers.available')}</TableHead>
                   <TableHead className="text-right">{t('leftovers.totalValue')}</TableHead>
-                  <TableHead className="text-right">{t('leftovers.balanceValue')}</TableHead>
                   <TableHead>{t('leftovers.originWork')}</TableHead>
                   <TableHead className="w-[120px]">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {materiais.map((material) => {
-                  const applied = getAppliedTotals(material.id);
-                  const availableQty = Number(material.quantidade) - applied.quantidade;
-                  const availableValue = Number(material.valor_total) - applied.valor;
                   const obra = material.obra_origem_id ? obrasMap.get(material.obra_origem_id) : undefined;
                   const materialCatalogo = material.material_id
                     ? materiaisCatalogo.find((item) => item.id === material.material_id)
@@ -308,9 +208,7 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
                     <TableRow key={material.id}>
                       <TableCell>{materialCatalogo?.nome || material.descricao}</TableCell>
                       <TableCell className="text-right">{Number(material.quantidade).toFixed(2)}</TableCell>
-                      <TableCell className="text-right">{availableQty.toFixed(2)}</TableCell>
                       <TableCell className="text-right">${Number(material.valor_total).toFixed(2)}</TableCell>
-                      <TableCell className="text-right">${availableValue.toFixed(2)}</TableCell>
                       <TableCell>
                         {obra ? (
                           <Link to={`/obras/${obra.id}`} className="text-primary hover:underline">
@@ -322,14 +220,6 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openApplyDialog(material)}
-                            disabled={availableQty <= 0}
-                          >
-                            <ArrowRightLeft className="h-4 w-4" />
-                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => setDeleteId(material.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -416,83 +306,6 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
                 {t('common.save')}
               </Button>
               <Button type="button" variant="outline" size="lg" className="flex-1" onClick={() => setCreateOpen(false)}>
-                {t('common.cancel')}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={applyDialog.open} onOpenChange={(open) => setApplyDialog({ open })}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('leftovers.apply')}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleApply} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="obra_destino_id">{t('leftovers.destinationWork')} *</Label>
-              <select
-                id="obra_destino_id"
-                value={applyForm.obra_destino_id}
-                onChange={(e) => setApplyForm({ ...applyForm, obra_destino_id: e.target.value })}
-                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
-                required
-              >
-                <option value="">{t('leftovers.destinationWork')}</option>
-                {obras.map((obra) => (
-                  <option key={obra.id} value={obra.id}>
-                    {obra.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-4 xl:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="apply-quantidade">{t('leftovers.quantity')} *</Label>
-                <Input
-                  id="apply-quantidade"
-                  type="number"
-                  step="0.01"
-                  value={applyForm.quantidade}
-                  onChange={(e) => setApplyForm({ ...applyForm, quantidade: e.target.value })}
-                  required
-                  className="h-12"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="apply-valor">{t('leftovers.creditValue')} *</Label>
-                <Input
-                  id="apply-valor"
-                  type="number"
-                  step="0.01"
-                  value={applyForm.valor_credito}
-                  onChange={(e) => setApplyForm({ ...applyForm, valor_credito: e.target.value })}
-                  required
-                  className="h-12"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="apply-data">{t('leftovers.date')}</Label>
-              <Input
-                id="apply-data"
-                type="date"
-                value={applyForm.data}
-                onChange={(e) => setApplyForm({ ...applyForm, data: e.target.value })}
-                className="h-12"
-              />
-            </div>
-            <div className="flex gap-4">
-              <Button type="submit" size="lg" className="flex-1">
-                {t('common.save')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="flex-1"
-                onClick={() => setApplyDialog({ open: false })}
-              >
                 {t('common.cancel')}
               </Button>
             </div>

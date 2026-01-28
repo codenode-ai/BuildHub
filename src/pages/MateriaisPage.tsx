@@ -95,6 +95,11 @@ export default function MateriaisPage() {
     const delta = mov.tipo === 'uso' ? -quantidade : quantidade;
     estoquePorMaterial.set(mov.material_id, atual + delta);
   });
+  const totalInvestido = materiais.reduce((sum, material) => {
+    const quantidade = Number(estoquePorMaterial.get(material.id) || 0);
+    const valorUnitario = material.preco_referencia ? Number(material.preco_referencia) : 0;
+    return sum + quantidade * valorUnitario;
+  }, 0);
 
   const openForm = (material?: Material) => {
     if (material) {
@@ -250,6 +255,15 @@ export default function MateriaisPage() {
           </Button>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{t('materials.totalInvested')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-2xl font-bold">{currencyFormatter.format(totalInvestido)}</p>
+        </CardContent>
+      </Card>
 
       {materiais.length === 0 ? (
         <Card>

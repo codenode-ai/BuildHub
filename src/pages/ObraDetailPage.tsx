@@ -43,7 +43,6 @@ import {
   equipeObraApi,
   lancamentosMaoObraApi,
   funcionariosApi,
-  materiaisSobraAplicacoesApi,
   materiaisApi,
   materiaisMovimentosApi,
   alocacoesDiariasApi,
@@ -59,7 +58,6 @@ import type {
   Funcionario,
   TipoCusto,
   StatusObra,
-  MaterialSobraAplicacao,
   MaterialMovimento,
   Material,
   AlocacaoDiaria,
@@ -78,7 +76,6 @@ export default function ObraDetailPage() {
   const [custos, setCustos] = useState<Custo[]>([]);
   const [equipe, setEquipe] = useState<EquipeObraWithFuncionario[]>([]);
   const [lancamentos, setLancamentos] = useState<LancamentoMaoObraWithFuncionario[]>([]);
-  const [creditos, setCreditos] = useState<MaterialSobraAplicacao[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [alocacoes, setAlocacoes] = useState<AlocacaoDiaria[]>([]);
   const [materiais, setMateriais] = useState<Material[]>([]);
@@ -149,7 +146,6 @@ export default function ObraDetailPage() {
         movimentosData,
         movimentosEstoqueData,
         alocacoesData,
-        creditosData,
       ] = await Promise.all([
         obrasApi.getById(id),
         orcamentosApi.getByObraId(id),
@@ -162,7 +158,6 @@ export default function ObraDetailPage() {
         materiaisMovimentosApi.getByObraId(id),
         materiaisMovimentosApi.getAll(),
         alocacoesDiariasApi.getByObraId(id),
-        materiaisSobraAplicacoesApi.getByObraDestinoId(id),
       ]);
 
       setObra(obraData);
@@ -176,7 +171,6 @@ export default function ObraDetailPage() {
       setMovimentos(movimentosData);
       setMovimentosEstoque(movimentosEstoqueData);
       setAlocacoes(alocacoesData);
-      setCreditos(creditosData);
 
       if (orcamentoData) {
         const itensData = await orcamentoItensApi.getByOrcamentoId(orcamentoData.id);
@@ -227,10 +221,9 @@ export default function ObraDetailPage() {
     0
   );
   const totalMaoObra = totalMaoObraLancamentos + totalMaoObraAlocacoes + maoDeObraCustos.reduce((sum, c) => sum + Number(c.valor), 0);
-  const totalCreditos = creditos.reduce((sum, c) => sum + Number(c.valor_credito), 0);
-  const resultado = totalRecebido - totalCustosMateriais - totalMaoObra + totalCreditos;
+  const resultado = totalRecebido - totalCustosMateriais - totalMaoObra;
   const orcamentoTotal = obra?.orcamento_total ? Number(obra.orcamento_total) : 0;
-  const saldoOrcamento = orcamentoTotal - totalCustosMateriais - totalMaoObra + totalCreditos;
+  const saldoOrcamento = orcamentoTotal - totalCustosMateriais - totalMaoObra;
   const estoquePorMaterial = useMemo(() => {
     const map = new Map<string, number>();
     movimentosEstoque.forEach((mov) => {
@@ -730,7 +723,7 @@ export default function ObraDetailPage() {
                 <CardTitle className="text-sm">{t('projects.receivedTotal')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-primary">${totalRecebido.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">${totalRecebido.toFixed(2)}</p>
               </CardContent>
             </Card>
             <Card>
@@ -738,7 +731,7 @@ export default function ObraDetailPage() {
                 <CardTitle className="text-sm">{t('projects.costsTotal')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">${totalCustosMateriais.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">${totalCustosMateriais.toFixed(2)}</p>
               </CardContent>
             </Card>
           <Card>
@@ -746,15 +739,7 @@ export default function ObraDetailPage() {
               <CardTitle className="text-sm">{t('projects.laborTotal')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">${totalMaoObra.toFixed(2)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">{t('projects.leftoversCredit')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-primary">${totalCreditos.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">${totalMaoObra.toFixed(2)}</p>
             </CardContent>
           </Card>
         </div>
@@ -867,7 +852,7 @@ export default function ObraDetailPage() {
                     {receitas.map((receita) => (
                       <TableRow key={receita.id}>
                         <TableCell>{new Date(receita.data).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right font-semibold text-primary">
+                        <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-400">
                           ${receita.valor.toFixed(2)}
                         </TableCell>
                         <TableCell>
@@ -926,7 +911,7 @@ export default function ObraDetailPage() {
                             <TableCell>{new Date(mov.data).toLocaleDateString()}</TableCell>
                             <TableCell>{material?.nome || t('materials.title')}</TableCell>
                             <TableCell className="text-right">{Number(mov.quantidade).toFixed(2)}</TableCell>
-                            <TableCell className="text-right font-semibold">
+                            <TableCell className="text-right font-semibold text-rose-600 dark:text-rose-400">
                               ${Number(mov.valor_total).toFixed(2)}
                             </TableCell>
                           </TableRow>
@@ -937,7 +922,7 @@ export default function ObraDetailPage() {
                         <TableCell>{new Date(custo.data).toLocaleDateString()}</TableCell>
                         <TableCell>{custo.descricao || t('materials.title')}</TableCell>
                         <TableCell className="text-right">-</TableCell>
-                        <TableCell className="text-right font-semibold">
+                        <TableCell className="text-right font-semibold text-rose-600 dark:text-rose-400">
                           ${Number(custo.valor).toFixed(2)}
                         </TableCell>
                       </TableRow>
@@ -948,45 +933,6 @@ export default function ObraDetailPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('financial.leftoversCredit')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {creditos.length === 0 ? (
-                <p className="text-center text-muted-foreground">{t('common.noData')}</p>
-              ) : (
-                <div className="space-y-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('common.date')}</TableHead>
-                        <TableHead className="text-right">{t('leftovers.quantity')}</TableHead>
-                        <TableHead className="text-right">{t('leftovers.creditValue')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {creditos.map((credito) => (
-                        <TableRow key={credito.id}>
-                          <TableCell>{new Date(credito.data).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-right">{Number(credito.quantidade).toFixed(2)}</TableCell>
-                          <TableCell className="text-right font-semibold text-primary">
-                            ${Number(credito.valor_credito).toFixed(2)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  <div className="flex justify-end border-t border-border pt-4">
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">{t('projects.leftoversCredit')}</p>
-                      <p className="text-2xl font-bold text-primary">${totalCreditos.toFixed(2)}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Team Tab */}
@@ -1092,7 +1038,7 @@ export default function ObraDetailPage() {
                             <TableCell>{new Date(alocacao.data).toLocaleDateString()}</TableCell>
                             <TableCell>{func?.nome || t('team.employee')}</TableCell>
                             <TableCell className="text-right">{Number(alocacao.horas).toFixed(1)}</TableCell>
-                            <TableCell className="text-right font-semibold">${valor.toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-semibold text-rose-600 dark:text-rose-400">${valor.toFixed(2)}</TableCell>
                             <TableCell>{alocacao.observacao || '-'}</TableCell>
                             <TableCell>
                               <div className="flex gap-2">
@@ -1112,7 +1058,7 @@ export default function ObraDetailPage() {
                   <div className="flex justify-end border-t border-border pt-4">
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">{t('projects.laborTotal')}</p>
-                      <p className="text-2xl font-bold">${totalMaoObraAlocacoes.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">${totalMaoObraAlocacoes.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>

@@ -11,7 +11,6 @@ import {
   custosApi,
   lancamentosMaoObraApi,
   funcionariosApi,
-  materiaisSobraAplicacoesApi,
   materiaisMovimentosApi,
   alocacoesDiariasApi,
 } from '@/db/api';
@@ -20,7 +19,6 @@ import type {
   Custo,
   LancamentoMaoObra,
   Funcionario,
-  MaterialSobraAplicacao,
   MaterialMovimento,
   AlocacaoDiaria,
 } from '@/types/types';
@@ -37,7 +35,6 @@ export default function FinancialDashboardPage() {
   const [lancamentos, setLancamentos] = useState<LancamentoMaoObra[]>([]);
   const [alocacoes, setAlocacoes] = useState<AlocacaoDiaria[]>([]);
   const [movimentos, setMovimentos] = useState<MaterialMovimento[]>([]);
-  const [creditos, setCreditos] = useState<MaterialSobraAplicacao[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [obrasFinalizadas, setObrasFinalizadas] = useState(0);
 
@@ -71,11 +68,10 @@ export default function FinancialDashboardPage() {
       setObrasFinalizadas(finalizadas.length);
 
       // Load financial data by date range to avoid per-project queries
-      const [receitasData, custosData, lancamentosData, creditosData, movimentosData, alocacoesData] = await Promise.all([
+      const [receitasData, custosData, lancamentosData, movimentosData, alocacoesData] = await Promise.all([
         receitasApi.getAllByDateRange(startDate, endDate),
         custosApi.getAllByDateRange(startDate, endDate),
         lancamentosMaoObraApi.getAllByDateRange(startDate, endDate),
-        materiaisSobraAplicacoesApi.getAllByDateRange(startDate, endDate),
         materiaisMovimentosApi.getAllByDateRange(startDate, endDate),
         alocacoesDiariasApi.getByDateRange(startDate, endDate),
       ]);
@@ -83,7 +79,6 @@ export default function FinancialDashboardPage() {
       setReceitas(receitasData);
       setCustos(custosData);
       setLancamentos(lancamentosData);
-      setCreditos(creditosData);
       setMovimentos(movimentosData);
       setAlocacoes(alocacoesData);
     } catch (error) {
@@ -121,9 +116,8 @@ export default function FinancialDashboardPage() {
     0
   );
   const totalMaoObra = totalMaoObraLancamentos + totalMaoObraAlocacoes + totalCustosMaoObra;
-  const totalCreditos = creditos.reduce((sum, c) => sum + Number(c.valor_credito), 0);
-  const resultado = totalReceitas - totalCustosMateriais - totalMaoObra + totalCreditos;
-  const breakdownCount = custos.length + lancamentos.length + creditos.length + movimentos.length + alocacoes.length;
+  const resultado = totalReceitas - totalCustosMateriais - totalMaoObra;
+  const breakdownCount = custos.length + lancamentos.length + movimentos.length + alocacoes.length;
 
   if (loading) {
     return (
@@ -184,12 +178,12 @@ export default function FinancialDashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('financial.totalRevenue')}</CardTitle>
-            <DollarSign className="h-5 w-5 text-primary" />
+            <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">${totalReceitas.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">${totalReceitas.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {receitas.length} {receitas.length === 1 ? 'receita' : 'receitas'}
+              {receitas.length} {receitas.length === 1 ? 'entrada' : 'entradas'}
             </p>
           </CardContent>
         </Card>
@@ -200,11 +194,11 @@ export default function FinancialDashboardPage() {
             <TrendingDown className="h-5 w-5 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
-              ${(totalCustosMateriais + totalMaoObra - totalCreditos).toFixed(2)}
+            <div className="text-3xl font-bold text-rose-600 dark:text-rose-400">
+              ${(totalCustosMateriais + totalMaoObra).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              ${totalCustosMateriais.toFixed(2)} materiais + ${totalMaoObra.toFixed(2)} mão de obra - ${totalCreditos.toFixed(2)} créditos
+              ${totalCustosMateriais.toFixed(2)} materiais + ${totalMaoObra.toFixed(2)} mão de obra
             </p>
           </CardContent>
         </Card>
@@ -258,7 +252,7 @@ export default function FinancialDashboardPage() {
                     <span className="text-muted-foreground">
                       {new Date(receita.data).toLocaleDateString()}
                     </span>
-                    <span className="font-semibold text-primary">${receita.valor.toFixed(2)}</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">${receita.valor.toFixed(2)}</span>
                   </div>
                 ))}
                 {receitas.length > 5 && (
@@ -276,7 +270,7 @@ export default function FinancialDashboardPage() {
             <CardTitle>{t('financial.costs')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {custos.length === 0 && lancamentos.length === 0 && creditos.length === 0 && movimentos.length === 0 && alocacoes.length === 0 ? (
+            {custos.length === 0 && lancamentos.length === 0 && movimentos.length === 0 && alocacoes.length === 0 ? (
               <p className="text-center text-muted-foreground">{t('common.noData')}</p>
             ) : (
               <div className="space-y-2">
@@ -285,7 +279,7 @@ export default function FinancialDashboardPage() {
                     <span className="text-muted-foreground">
                       {new Date(mov.data).toLocaleDateString()} - {t('financial.materialsUsage')}
                     </span>
-                    <span className="font-semibold">${Number(mov.valor_total).toFixed(2)}</span>
+                    <span className="font-semibold text-rose-600 dark:text-rose-400">${Number(mov.valor_total).toFixed(2)}</span>
                   </div>
                 ))}
                 {custos.slice(0, 3).map((custo) => (
@@ -293,7 +287,7 @@ export default function FinancialDashboardPage() {
                     <span className="text-muted-foreground">
                       {new Date(custo.data).toLocaleDateString()} - {custo.descricao || (custo.tipo === 'mao_de_obra' ? t('financial.labor') : t('financial.materials'))}
                     </span>
-                    <span className="font-semibold">${custo.valor.toFixed(2)}</span>
+                    <span className="font-semibold text-rose-600 dark:text-rose-400">${custo.valor.toFixed(2)}</span>
                   </div>
                 ))}
                 {lancamentos.slice(0, 2).map((lanc) => {
@@ -304,7 +298,7 @@ export default function FinancialDashboardPage() {
                       <span className="text-muted-foreground">
                         {new Date(lanc.data).toLocaleDateString()} - {t('financial.labor')}
                       </span>
-                      <span className="font-semibold">${valor.toFixed(2)}</span>
+                      <span className="font-semibold text-rose-600 dark:text-rose-400">${valor.toFixed(2)}</span>
                     </div>
                   );
                 })}
@@ -313,17 +307,9 @@ export default function FinancialDashboardPage() {
                     <span className="text-muted-foreground">
                       {new Date(alocacao.data).toLocaleDateString()} - {t('financial.laborAllocations')}
                     </span>
-                    <span className="font-semibold">
+                    <span className="font-semibold text-rose-600 dark:text-rose-400">
                       ${(Number(alocacao.horas) * Number(alocacao.valor_hora)).toFixed(2)}
                     </span>
-                  </div>
-                ))}
-                {creditos.slice(0, 2).map((credito) => (
-                  <div key={credito.id} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {new Date(credito.data).toLocaleDateString()} - {t('financial.leftoversCredit')}
-                    </span>
-                    <span className="font-semibold text-primary">-${Number(credito.valor_credito).toFixed(2)}</span>
                   </div>
                 ))}
                 {breakdownCount > 5 && (
