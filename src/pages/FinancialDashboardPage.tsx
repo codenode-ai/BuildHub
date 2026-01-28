@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, TrendingUp, TrendingDown, CheckCircle2 } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, CheckCircle2, LayoutGrid, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -23,6 +24,18 @@ import type {
   AlocacaoDiaria,
 } from '@/types/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
+import {
+  BarChart,
+  Bar,
+  CartesianGrid,
+  XAxis,
+  Cell,
+} from 'recharts';
 
 export default function FinancialDashboardPage() {
   const { t } = useLanguage();
@@ -37,6 +50,9 @@ export default function FinancialDashboardPage() {
   const [movimentos, setMovimentos] = useState<MaterialMovimento[]>([]);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [obrasFinalizadas, setObrasFinalizadas] = useState(0);
+  const [obras, setObras] = useState<{ id: string; nome: string }[]>([]);
+  const [obraSelecionada, setObraSelecionada] = useState('');
+  const [viewMode, setViewMode] = useState<'cards' | 'chart'>('cards');
 
   useEffect(() => {
     // Set default dates (current month)
@@ -59,13 +75,15 @@ export default function FinancialDashboardPage() {
       setLoading(true);
       
       // Load all data
-      const [finalizadas, funcionariosData] = await Promise.all([
+      const [finalizadas, funcionariosData, obrasData] = await Promise.all([
         obrasApi.getCompletedByDateRange(startDate, endDate),
         funcionariosApi.getAll(),
+        obrasApi.getAll(),
       ]);
 
       setFuncionarios(funcionariosData);
       setObrasFinalizadas(finalizadas.length);
+      setObras(obrasData.map((obra) => ({ id: obra.id, nome: obra.nome })));
 
       // Load financial data by date range to avoid per-project queries
       const [receitasData, custosData, lancamentosData, movimentosData, alocacoesData] = await Promise.all([
@@ -94,30 +112,56 @@ export default function FinancialDashboardPage() {
   };
 
   // Calculations
-  const totalReceitas = receitas.reduce((sum, r) => sum + Number(r.valor), 0);
-  const totalCustosMateriaisLegado = custos
+  const receitasFiltradas = obraSelecionada
+    ? receitas.filter((r) => r.obra_id === obraSelecionada)
+    : receitas;
+  const custosFiltrados = obraSelecionada
+    ? custos.filter((c) => c.obra_id === obraSelecionada)
+    : custos;
+  const lancamentosFiltrados = obraSelecionada
+    ? lancamentos.filter((l) => l.obra_id === obraSelecionada)
+    : lancamentos;
+  const alocacoesFiltradas = obraSelecionada
+    ? alocacoes.filter((a) => a.obra_id === obraSelecionada)
+    : alocacoes;
+  const movimentosFiltrados = obraSelecionada
+    ? movimentos.filter((mov) => mov.obra_id === obraSelecionada)
+    : movimentos;
+
+  const totalReceitas = receitasFiltradas.reduce((sum, r) => sum + Number(r.valor), 0);
+  const totalCustosMateriaisLegado = custosFiltrados
     .filter((c) => c.tipo === 'material_outros')
     .reduce((sum, c) => sum + Number(c.valor), 0);
-  const totalMateriaisMovimentos = movimentos
+  const totalMateriaisMovimentos = movimentosFiltrados
     .filter((mov) => mov.tipo === 'uso')
     .reduce((sum, mov) => sum + Number(mov.valor_total), 0);
   const totalCustosMateriais = totalCustosMateriaisLegado + totalMateriaisMovimentos;
-  const totalCustosMaoObra = custos
+  const totalCustosMaoObra = custosFiltrados
     .filter((c) => c.tipo === 'mao_de_obra')
     .reduce((sum, c) => sum + Number(c.valor), 0);
-  const totalMaoObraLancamentos = alocacoes.length > 0
+  const totalMaoObraLancamentos = alocacoesFiltradas.length > 0
     ? 0
-    : lancamentos.reduce((sum, l) => {
+    : lancamentosFiltrados.reduce((sum, l) => {
         const func = funcionarios.find(f => f.id === l.funcionario_id);
         return sum + (func ? Number(l.quantidade) * Number(func.valor) : 0);
       }, 0);
-  const totalMaoObraAlocacoes = alocacoes.reduce(
+  const totalMaoObraAlocacoes = alocacoesFiltradas.reduce(
     (sum, a) => sum + Number(a.horas) * Number(a.valor_hora),
     0
   );
   const totalMaoObra = totalMaoObraLancamentos + totalMaoObraAlocacoes + totalCustosMaoObra;
   const resultado = totalReceitas - totalCustosMateriais - totalMaoObra;
-  const breakdownCount = custos.length + lancamentos.length + movimentos.length + alocacoes.length;
+  const totalCustos = totalCustosMateriais + totalMaoObra;
+  const breakdownCount = custosFiltrados.length + lancamentosFiltrados.length + movimentosFiltrados.length + alocacoesFiltradas.length;
+  const selectedObraLabel = obraSelecionada
+    ? obras.find((obra) => obra.id === obraSelecionada)?.nome || t('projects.title')
+    : t('projects.title');
+  const chartData = [
+    { name: t('financial.totalRevenue'), valor: totalReceitas, color: '#16a34a' },
+    { name: t('financial.materialCosts'), valor: totalCustosMateriais, color: '#f97316' },
+    { name: t('financial.laborCosts'), valor: totalMaoObra, color: '#e11d48' },
+    { name: t('financial.result'), valor: resultado, color: resultado >= 0 ? '#2563eb' : '#dc2626' },
+  ];
 
   if (loading) {
     return (
@@ -148,7 +192,7 @@ export default function FinancialDashboardPage() {
           <CardTitle>{t('financial.period')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="startDate">{t('projects.startDate')}</Label>
               <Input
@@ -169,12 +213,62 @@ export default function FinancialDashboardPage() {
                 className="h-12"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="obraFiltro">{t('financial.filterByProject')}</Label>
+              <select
+                id="obraFiltro"
+                value={obraSelecionada}
+                onChange={(e) => setObraSelecionada(e.target.value)}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">{t('financial.allProjects')}</option>
+                {obras.map((obra) => (
+                  <option key={obra.id} value={obra.id}>
+                    {obra.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+            <span className="text-muted-foreground">
+              {t('financial.totalCosts')} ({selectedObraLabel})
+            </span>
+            <span className="font-semibold text-rose-600 dark:text-rose-400">
+              ${totalCustos.toFixed(2)}
+            </span>
           </div>
         </CardContent>
       </Card>
 
       {/* Metrics */}
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 rounded-md border border-border p-1">
+          <Button
+            type="button"
+            size="sm"
+            variant={viewMode === 'cards' ? 'default' : 'ghost'}
+            onClick={() => setViewMode('cards')}
+            className="gap-2"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            {t('financial.viewCards')}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={viewMode === 'chart' ? 'default' : 'ghost'}
+            onClick={() => setViewMode('chart')}
+            className="gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            {t('financial.viewChart')}
+          </Button>
+        </div>
+      </div>
+
+      {viewMode === 'cards' ? (
+        <div className="grid gap-4 xl:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('financial.totalRevenue')}</CardTitle>
@@ -183,22 +277,37 @@ export default function FinancialDashboardPage() {
           <CardContent>
             <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">${totalReceitas.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {receitas.length} {receitas.length === 1 ? 'entrada' : 'entradas'}
+              {receitasFiltradas.length} {receitasFiltradas.length === 1 ? 'entrada' : 'entradas'}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('financial.totalCosts')}</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('financial.materialCosts')}</CardTitle>
             <TrendingDown className="h-5 w-5 text-destructive" />
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-rose-600 dark:text-rose-400">
-              ${(totalCustosMateriais + totalMaoObra).toFixed(2)}
+              ${totalCustosMateriais.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              ${totalCustosMateriais.toFixed(2)} materiais + ${totalMaoObra.toFixed(2)} mão de obra
+              {t('financial.materialsUsage')}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t('financial.laborCosts')}</CardTitle>
+            <TrendingDown className="h-5 w-5 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-rose-600 dark:text-rose-400">
+              ${totalMaoObra.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('financial.labor')}
             </p>
           </CardContent>
         </Card>
@@ -235,6 +344,37 @@ export default function FinancialDashboardPage() {
           </CardContent>
         </Card>
       </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('financial.viewChart')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer
+              config={{
+                valor: { label: t('common.value') },
+              }}
+              className="h-[280px]"
+            >
+              <BarChart data={chartData}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="valor" radius={6}>
+                  {chartData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Breakdown */}
       <div className="grid gap-4 xl:grid-cols-2">
@@ -243,11 +383,11 @@ export default function FinancialDashboardPage() {
             <CardTitle>{t('financial.revenues')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {receitas.length === 0 ? (
+            {receitasFiltradas.length === 0 ? (
               <p className="text-center text-muted-foreground">{t('common.noData')}</p>
             ) : (
               <div className="space-y-2">
-                {receitas.slice(0, 5).map((receita) => (
+                {receitasFiltradas.slice(0, 5).map((receita) => (
                   <div key={receita.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
                       {new Date(receita.data).toLocaleDateString()}
@@ -255,9 +395,9 @@ export default function FinancialDashboardPage() {
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">${receita.valor.toFixed(2)}</span>
                   </div>
                 ))}
-                {receitas.length > 5 && (
+                {receitasFiltradas.length > 5 && (
                   <p className="text-xs text-muted-foreground text-center pt-2">
-                    +{receitas.length - 5} mais
+                    +{receitasFiltradas.length - 5} mais
                   </p>
                 )}
               </div>
@@ -270,11 +410,11 @@ export default function FinancialDashboardPage() {
             <CardTitle>{t('financial.costs')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {custos.length === 0 && lancamentos.length === 0 && movimentos.length === 0 && alocacoes.length === 0 ? (
+            {custosFiltrados.length === 0 && lancamentosFiltrados.length === 0 && movimentosFiltrados.length === 0 && alocacoesFiltradas.length === 0 ? (
               <p className="text-center text-muted-foreground">{t('common.noData')}</p>
             ) : (
               <div className="space-y-2">
-                {movimentos.slice(0, 2).map((mov) => (
+                {movimentosFiltrados.slice(0, 2).map((mov) => (
                   <div key={mov.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
                       {new Date(mov.data).toLocaleDateString()} - {t('financial.materialsUsage')}
@@ -282,7 +422,7 @@ export default function FinancialDashboardPage() {
                     <span className="font-semibold text-rose-600 dark:text-rose-400">${Number(mov.valor_total).toFixed(2)}</span>
                   </div>
                 ))}
-                {custos.slice(0, 3).map((custo) => (
+                {custosFiltrados.slice(0, 3).map((custo) => (
                   <div key={custo.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
                       {new Date(custo.data).toLocaleDateString()} - {custo.descricao || (custo.tipo === 'mao_de_obra' ? t('financial.labor') : t('financial.materials'))}
@@ -290,7 +430,7 @@ export default function FinancialDashboardPage() {
                     <span className="font-semibold text-rose-600 dark:text-rose-400">${custo.valor.toFixed(2)}</span>
                   </div>
                 ))}
-                {lancamentos.slice(0, 2).map((lanc) => {
+                {lancamentosFiltrados.slice(0, 2).map((lanc) => {
                   const func = funcionarios.find(f => f.id === lanc.funcionario_id);
                   const valor = func ? Number(lanc.quantidade) * Number(func.valor) : 0;
                   return (
@@ -302,7 +442,7 @@ export default function FinancialDashboardPage() {
                     </div>
                   );
                 })}
-                {alocacoes.slice(0, 2).map((alocacao) => (
+                {alocacoesFiltradas.slice(0, 2).map((alocacao) => (
                   <div key={alocacao.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
                       {new Date(alocacao.data).toLocaleDateString()} - {t('financial.laborAllocations')}
