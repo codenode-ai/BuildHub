@@ -12,6 +12,7 @@ import {
   funcionariosApi,
   alocacoesDiariasApi,
 } from '@/db/api';
+import { formatDateDisplay, toLocalDateInput } from '@/lib/date';
 import type { ObraWithCliente, StatusObra, AlocacaoDiaria, Funcionario } from '@/types/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -39,7 +40,7 @@ const addDays = (date: Date, days: number) => {
   return next;
 };
 
-const formatDateInput = (date: Date) => date.toISOString().split('T')[0];
+const formatDateInput = (date: Date) => toLocalDateInput(date);
 
 export default function DashboardPage() {
   const { t } = useLanguage();
@@ -495,13 +496,13 @@ export default function DashboardPage() {
                     {obra.data_inicio && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t('projects.startDate')}:</span>
-                        <span>{new Date(obra.data_inicio).toLocaleDateString()}</span>
+                        <span>{formatDateDisplay(obra.data_inicio)}</span>
                       </div>
                     )}
                     {obra.data_fim && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t('projects.endDate')}:</span>
-                        <span>{new Date(obra.data_fim).toLocaleDateString()}</span>
+                        <span>{formatDateDisplay(obra.data_fim)}</span>
                       </div>
                     )}
                   </div>

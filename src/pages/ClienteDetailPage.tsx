@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { clientesApi, obrasApi } from '@/db/api';
+import { formatDateDisplay } from '@/lib/date';
 import type { Cliente, ObraWithCliente, StatusObra } from '@/types/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -151,7 +152,7 @@ export default function ClienteDetailPage() {
                       <p className="font-medium">{obra.nome}</p>
                       {obra.data_inicio && (
                         <p className="text-sm text-muted-foreground">
-                          {new Date(obra.data_inicio).toLocaleDateString()}
+                          {formatDateDisplay(obra.data_inicio)}
                         </p>
                       )}
                     </div>

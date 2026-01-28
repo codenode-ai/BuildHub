@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { formatDateDisplay, toLocalDateInput } from '@/lib/date';
 import {
   obrasApi,
   receitasApi,
@@ -71,8 +72,8 @@ export default function FinancialDashboardPage() {
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     
-    setStartDate(firstDay.toISOString().split('T')[0]);
-    setEndDate(lastDay.toISOString().split('T')[0]);
+    setStartDate(toLocalDateInput(firstDay));
+    setEndDate(toLocalDateInput(lastDay));
   }, []);
 
   useEffect(() => {
@@ -463,7 +464,7 @@ export default function FinancialDashboardPage() {
                 {receitasFiltradas.slice(0, 5).map((receita) => (
                   <div key={receita.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {new Date(receita.data).toLocaleDateString()}
+                      {formatDateDisplay(receita.data)}
                     </span>
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">${receita.valor.toFixed(2)}</span>
                   </div>
@@ -509,7 +510,7 @@ export default function FinancialDashboardPage() {
                 {movimentosFiltrados.slice(0, 2).map((mov) => (
                   <div key={mov.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {new Date(mov.data).toLocaleDateString()} - {t('financial.materialsUsage')}
+                      {formatDateDisplay(mov.data)} - {t('financial.materialsUsage')}
                     </span>
                     <span className="font-semibold text-rose-600 dark:text-rose-400">${Number(mov.valor_total).toFixed(2)}</span>
                   </div>
@@ -517,7 +518,7 @@ export default function FinancialDashboardPage() {
                 {custosFiltrados.slice(0, 3).map((custo) => (
                   <div key={custo.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {new Date(custo.data).toLocaleDateString()} - {custo.descricao || (custo.tipo === 'mao_de_obra' ? t('financial.labor') : t('financial.materials'))}
+                      {formatDateDisplay(custo.data)} - {custo.descricao || (custo.tipo === 'mao_de_obra' ? t('financial.labor') : t('financial.materials'))}
                     </span>
                     <span className="font-semibold text-rose-600 dark:text-rose-400">${custo.valor.toFixed(2)}</span>
                   </div>
@@ -528,7 +529,7 @@ export default function FinancialDashboardPage() {
                   return (
                     <div key={lanc.id} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
-                        {new Date(lanc.data).toLocaleDateString()} - {t('financial.labor')}
+                        {formatDateDisplay(lanc.data)} - {t('financial.labor')}
                       </span>
                       <span className="font-semibold text-rose-600 dark:text-rose-400">${valor.toFixed(2)}</span>
                     </div>
@@ -537,7 +538,7 @@ export default function FinancialDashboardPage() {
                 {alocacoesFiltradas.slice(0, 2).map((alocacao) => (
                   <div key={alocacao.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {new Date(alocacao.data).toLocaleDateString()} - {t('financial.laborAllocations')}
+                      {formatDateDisplay(alocacao.data)} - {t('financial.laborAllocations')}
                     </span>
                     <span className="font-semibold text-rose-600 dark:text-rose-400">
                       ${(Number(alocacao.horas) * Number(alocacao.valor_hora)).toFixed(2)}
@@ -594,7 +595,7 @@ export default function FinancialDashboardPage() {
                 {receitasDialogItems.map((receita) => (
                   <div key={receita.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
                     <div>
-                      <p className="text-muted-foreground">{new Date(receita.data).toLocaleDateString()}</p>
+                      <p className="text-muted-foreground">{formatDateDisplay(receita.data)}</p>
                       <p className="text-xs text-muted-foreground">
                         {obrasMap.get(receita.obra_id) || t('projects.title')}
                       </p>
@@ -663,7 +664,7 @@ export default function FinancialDashboardPage() {
                   <div key={item.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
                     <div>
                       <p className="text-muted-foreground">
-                        {new Date(item.data).toLocaleDateString()} - {item.descricao}
+                        {formatDateDisplay(item.data)} - {item.descricao}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {item.obra_id ? obrasMap.get(item.obra_id) || t('projects.title') : t('projects.title')}

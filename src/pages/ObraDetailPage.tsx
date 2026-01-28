@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/table';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { formatDateDisplay, toLocalDateInput } from '@/lib/date';
 import {
   obrasApi,
   orcamentosApi,
@@ -111,7 +112,7 @@ export default function ObraDetailPage() {
   });
   const [alocacaoForm, setAlocacaoForm] = useState({
     funcionario_id: '',
-    data: new Date().toISOString().split('T')[0],
+    data: toLocalDateInput(new Date()),
     horas: '',
     observacao: '',
   });
@@ -234,6 +235,16 @@ export default function ObraDetailPage() {
     });
     return map;
   }, [movimentosEstoque]);
+  const materiaisOrdenados = useMemo(() => {
+    return [...materiais].sort((a, b) => {
+      const estoqueA = estoquePorMaterial.get(a.id) || 0;
+      const estoqueB = estoquePorMaterial.get(b.id) || 0;
+      if (estoqueA === estoqueB) {
+        return a.nome.localeCompare(b.nome);
+      }
+      return estoqueB - estoqueA;
+    });
+  }, [materiais, estoquePorMaterial]);
   const selectedMaterial = materiais.find((item) => item.id === materialForm.material_id);
   const valorUnitarioMaterial = selectedMaterial?.preco_referencia ? Number(selectedMaterial.preco_referencia) : 0;
   const totalUsoMaterial = (Number(materialForm.quantidade) || 0) * valorUnitarioMaterial;
@@ -299,7 +310,7 @@ export default function ObraDetailPage() {
       });
     } else {
       setEditingReceita(null);
-      setReceitaForm({ valor: '', data: new Date().toISOString().split('T')[0], observacoes: '' });
+      setReceitaForm({ valor: '', data: toLocalDateInput(new Date()), observacoes: '' });
     }
     setReceitaDialog(true);
   };
@@ -343,7 +354,7 @@ export default function ObraDetailPage() {
       });
     } else {
       setEditingCusto(null);
-      setCustoForm({ tipo: 'material_outros', valor: '', data: new Date().toISOString().split('T')[0], descricao: '' });
+      setCustoForm({ tipo: 'material_outros', valor: '', data: toLocalDateInput(new Date()), descricao: '' });
     }
     setCustoDialog(true);
   };
@@ -376,12 +387,27 @@ export default function ObraDetailPage() {
     }
   };
 
+  const refreshMaterialCatalog = async () => {
+    try {
+      const [materiaisData, movimentosEstoqueData] = await Promise.all([
+        materiaisApi.getAll(),
+        materiaisMovimentosApi.getAll(),
+      ]);
+      setMateriais(materiaisData);
+      setMovimentosEstoque(movimentosEstoqueData);
+    } catch (error) {
+      console.error('Erro ao atualizar materiais:', error);
+      toast({ title: 'Erro', description: t('messages.error'), variant: 'destructive' });
+    }
+  };
+
   // Material handlers
-  const openMaterialDialog = () => {
+  const openMaterialDialog = async () => {
+    await refreshMaterialCatalog();
     setMaterialForm({
       material_id: '',
       quantidade: '',
-      data: new Date().toISOString().split('T')[0],
+      data: toLocalDateInput(new Date()),
       observacao: '',
     });
     setMaterialCreateOpen(false);
@@ -434,8 +460,9 @@ export default function ObraDetailPage() {
     }
   };
 
-  const handleMaterialCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleMaterialCreate = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     try {
       const quantidadeInicial = Number(materialCreateForm.quantidade_inicial);
       if (!Number.isInteger(quantidadeInicial)) {
@@ -458,7 +485,7 @@ export default function ObraDetailPage() {
         tipo: 'ajuste',
         quantidade: quantidadeInicial,
         valor_total: quantidadeInicial * valorUnitario,
-        data: new Date().toISOString().split('T')[0],
+        data: toLocalDateInput(new Date()),
         observacao: 'Estoque inicial',
         obra_id: null,
       });
@@ -466,7 +493,7 @@ export default function ObraDetailPage() {
       setMaterialCreateForm({ nome: '', preco_referencia: '', quantidade_inicial: '' });
       setMaterialCreateOpen(false);
       loadData();
-      setMaterialForm({ ...materialForm, material_id: novo.id });
+      setMaterialForm((prev) => ({ ...prev, material_id: novo.id }));
     } catch (error) {
       console.error('Erro ao criar material:', error);
       toast({ title: 'Erro', description: t('messages.error'), variant: 'destructive' });
@@ -487,7 +514,7 @@ export default function ObraDetailPage() {
     setEditingAlocacaoId(null);
     setAlocacaoForm({
       funcionario_id: '',
-      data: new Date().toISOString().split('T')[0],
+      data: toLocalDateInput(new Date()),
       horas: '',
       observacao: '',
     });
@@ -550,7 +577,7 @@ export default function ObraDetailPage() {
       });
     } else {
       setEditingLancamento(null);
-      setLancamentoForm({ funcionario_id: '', data: new Date().toISOString().split('T')[0], quantidade: '', observacoes: '' });
+      setLancamentoForm({ funcionario_id: '', data: toLocalDateInput(new Date()), quantidade: '', observacoes: '' });
     }
     setLancamentoDialog(true);
   };
@@ -851,7 +878,7 @@ export default function ObraDetailPage() {
                   <TableBody>
                     {receitas.map((receita) => (
                       <TableRow key={receita.id}>
-                        <TableCell>{new Date(receita.data).toLocaleDateString()}</TableCell>
+                        <TableCell>{formatDateDisplay(receita.data)}</TableCell>
                         <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-400">
                           ${receita.valor.toFixed(2)}
                         </TableCell>
@@ -908,7 +935,7 @@ export default function ObraDetailPage() {
                         const material = materiais.find((item) => item.id === mov.material_id);
                         return (
                           <TableRow key={mov.id}>
-                            <TableCell>{new Date(mov.data).toLocaleDateString()}</TableCell>
+                            <TableCell>{formatDateDisplay(mov.data)}</TableCell>
                             <TableCell>{material?.nome || t('materials.title')}</TableCell>
                             <TableCell className="text-right">{Number(mov.quantidade).toFixed(2)}</TableCell>
                             <TableCell className="text-right font-semibold text-rose-600 dark:text-rose-400">
@@ -919,7 +946,7 @@ export default function ObraDetailPage() {
                       })}
                     {materialCustos.map((custo) => (
                       <TableRow key={custo.id}>
-                        <TableCell>{new Date(custo.data).toLocaleDateString()}</TableCell>
+                        <TableCell>{formatDateDisplay(custo.data)}</TableCell>
                         <TableCell>{custo.descricao || t('materials.title')}</TableCell>
                         <TableCell className="text-right">-</TableCell>
                         <TableCell className="text-right font-semibold text-rose-600 dark:text-rose-400">
@@ -1035,7 +1062,7 @@ export default function ObraDetailPage() {
                         const valor = Number(alocacao.horas) * Number(alocacao.valor_hora);
                         return (
                           <TableRow key={alocacao.id}>
-                            <TableCell>{new Date(alocacao.data).toLocaleDateString()}</TableCell>
+                            <TableCell>{formatDateDisplay(alocacao.data)}</TableCell>
                             <TableCell>{func?.nome || t('team.employee')}</TableCell>
                             <TableCell className="text-right">{Number(alocacao.horas).toFixed(1)}</TableCell>
                             <TableCell className="text-right font-semibold text-rose-600 dark:text-rose-400">${valor.toFixed(2)}</TableCell>
@@ -1250,7 +1277,7 @@ export default function ObraDetailPage() {
                 required
               >
                 <option value="">{t('materials.title')}</option>
-                {materiais.map((material) => (
+                {materiaisOrdenados.map((material) => (
                   <option key={material.id} value={material.id}>
                     {material.nome} (disp: {Number(estoquePorMaterial.get(material.id) || 0).toFixed(2)})
                   </option>
@@ -1273,7 +1300,7 @@ export default function ObraDetailPage() {
             </div>
             {materialCreateOpen && (
               <div className="rounded-md border border-border p-3">
-                <form onSubmit={handleMaterialCreate} className="space-y-3">
+                <div className="space-y-3">
                   <div className="space-y-2">
                     <Label htmlFor="novo_material_nome">Nome *</Label>
                     <Input
@@ -1309,7 +1336,7 @@ export default function ObraDetailPage() {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button type="submit" size="sm">
+                    <Button type="button" size="sm" onClick={() => handleMaterialCreate()}>
                       {t('common.save')}
                     </Button>
                     <Button
@@ -1321,7 +1348,7 @@ export default function ObraDetailPage() {
                       {t('common.cancel')}
                     </Button>
                   </div>
-                </form>
+                </div>
               </div>
             )}
             <div className="grid gap-4 xl:grid-cols-2">

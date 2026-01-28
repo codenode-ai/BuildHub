@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { obrasApi } from '@/db/api';
+import { formatDateDisplay } from '@/lib/date';
 import type { ObraWithCliente, StatusObra } from '@/types/types';
 
 export default function ObrasListPage() {
@@ -149,13 +150,13 @@ export default function ObrasListPage() {
                     {obra.data_inicio && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t('projects.startDate')}:</span>
-                        <span>{new Date(obra.data_inicio).toLocaleDateString()}</span>
+                        <span>{formatDateDisplay(obra.data_inicio)}</span>
                       </div>
                     )}
                     {obra.data_fim && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t('projects.endDate')}:</span>
-                        <span>{new Date(obra.data_fim).toLocaleDateString()}</span>
+                        <span>{formatDateDisplay(obra.data_fim)}</span>
                       </div>
                     )}
                   </div>
