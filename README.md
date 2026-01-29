@@ -15,7 +15,7 @@ Miaoda Application Link URL
 ├── package.json # Package management
 ├── postcss.config.js # PostCSS configuration
 ├── public # Static resources directory
-│   ├── favicon.png # Icon
+│   ├── favicon.ico # Icon
 │   └── images # Image resources
 ├── src # Source code directory
 │   ├── App.tsx # Entry file
