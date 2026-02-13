@@ -43,7 +43,7 @@ const addDays = (date: Date, days: number) => {
 const formatDateInput = (date: Date) => toLocalDateInput(date);
 
 export default function DashboardPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const location = useLocation();
   const [obras, setObras] = useState<ObraWithCliente[]>([]);
@@ -203,6 +203,15 @@ export default function DashboardPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  const formatWeekdayHeader = (date: Date) => {
+    const locale = language === 'pt' ? 'pt-BR' : 'en-US';
+    const weekday = new Intl.DateTimeFormat(locale, { weekday: 'short' })
+      .format(date)
+      .replace(/[.,]/g, '');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${weekday} ${day}`;
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -237,7 +246,7 @@ export default function DashboardPage() {
           <div>
             <CardTitle>{t('allocations.title')}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {weekDates[0].toLocaleDateString()} - {weekDates[6].toLocaleDateString()}
+              {formatDateDisplay(formatDateInput(weekDates[0]))} - {formatDateDisplay(formatDateInput(weekDates[6]))}
             </p>
           </div>
           <div className="flex gap-2">
@@ -271,7 +280,7 @@ export default function DashboardPage() {
                   <TableHead>{t('team.employee')}</TableHead>
                   {weekDates.map((date) => (
                     <TableHead key={date.toISOString()} className="text-center">
-                      {date.toLocaleDateString(undefined, { weekday: 'short', day: '2-digit' })}
+                      {formatWeekdayHeader(date)}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -388,6 +397,7 @@ export default function DashboardPage() {
                     id="horas"
                     type="number"
                     step="0.5"
+                    min="0.5"
                     value={allocationForm.horas}
                     onChange={(e) => setAllocationForm({ ...allocationForm, horas: e.target.value })}
                     required

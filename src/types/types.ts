@@ -24,6 +24,7 @@ export type Obra = {
   id: string;
   nome: string;
   cliente_id: string;
+  endereco?: string;
   status: StatusObra;
   motivo_paralisacao?: string;
   data_inicio?: string;
@@ -177,6 +178,7 @@ export type MaterialSobra = {
   valor_total: number;
   material_id?: string | null;
   movimento_estoque_id?: string | null;
+  movimento_obra_origem_id?: string | null;
   obra_origem_id?: string | null;
   user_id: string;
   created_at: string;
@@ -189,6 +191,27 @@ export type MaterialSobraAplicacao = {
   obra_destino_id: string;
   quantidade: number;
   valor_credito: number;
+  data: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TipoMovimentoCaixaEmpresa = 'entrada' | 'saida';
+
+export type CategoriaMovimentoCaixaEmpresa =
+  | 'aporte'
+  | 'despesa_empresa'
+  | 'prolabore'
+  | 'retirada_dono'
+  | 'outros';
+
+export type CaixaEmpresaMovimento = {
+  id: string;
+  tipo: TipoMovimentoCaixaEmpresa;
+  categoria: CategoriaMovimentoCaixaEmpresa;
+  descricao?: string | null;
+  valor: number;
   data: string;
   user_id: string;
   created_at: string;

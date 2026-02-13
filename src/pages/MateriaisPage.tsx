@@ -378,6 +378,7 @@ export default function MateriaisPage() {
                 id="preco_referencia"
                 type="number"
                 step="0.01"
+                min="0"
                 value={formData.preco_referencia}
                 onChange={(e) => setFormData({ ...formData, preco_referencia: e.target.value })}
                 className="h-12"
@@ -453,6 +454,7 @@ export default function MateriaisPage() {
                   id="stock_valor"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={stockForm.valor_unitario}
                   onChange={(e) => setStockForm({ ...stockForm, valor_unitario: e.target.value })}
                   required

@@ -22,6 +22,7 @@ export default function ObraFormPage() {
   const [formData, setFormData] = useState({
     nome: '',
     cliente_id: searchParams.get('cliente') || '',
+    endereco: '',
     status: 'orcamento' as StatusObra,
     data_inicio: '',
     data_fim: '',
@@ -57,6 +58,7 @@ export default function ObraFormPage() {
         setFormData({
           nome: data.nome || '',
           cliente_id: data.cliente_id || '',
+          endereco: data.endereco || '',
           status: data.status || 'orcamento',
           data_inicio: data.data_inicio || '',
           data_fim: data.data_fim || '',
@@ -162,6 +164,16 @@ export default function ObraFormPage() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="endereco">{t('clients.address')}</Label>
+              <Input
+                id="endereco"
+                value={formData.endereco}
+                onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                className="h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="status">{t('projects.status')}</Label>
               <select
                 id="status"
@@ -231,6 +243,7 @@ export default function ObraFormPage() {
                 id="orcamento_total"
                 type="number"
                 step="0.01"
+                min="0"
                 value={formData.orcamento_total}
                 onChange={(e) => setFormData({ ...formData, orcamento_total: e.target.value })}
                 className="h-12"

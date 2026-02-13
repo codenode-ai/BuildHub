@@ -17,6 +17,7 @@ import type {
   Material,
   MaterialMovimento,
   AlocacaoDiaria,
+  CaixaEmpresaMovimento,
 } from '@/types/types';
 
 // Clientes API
@@ -282,6 +283,15 @@ export const materiaisMovimentosApi = {
 
 // Alocacoes Diarias API
 export const alocacoesDiariasApi = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('alocacoes_diarias')
+      .select('*')
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
   async getByDateRange(startDate: string, endDate: string) {
     const { data, error } = await supabase
       .from('alocacoes_diarias')
@@ -428,6 +438,15 @@ export const orcamentoItensApi = {
 
 // Receitas API
 export const receitasApi = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('receitas')
+      .select('*')
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
   async getByObraId(obraId: string) {
     const { data, error } = await supabase
       .from('receitas')
@@ -493,6 +512,15 @@ export const receitasApi = {
 
 // Custos API
 export const custosApi = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('custos')
+      .select('*')
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
   async getByObraId(obraId: string) {
     const { data, error } = await supabase
       .from('custos')
@@ -646,6 +674,15 @@ export const equipeObraApi = {
 
 // Lancamentos Mao de Obra API
 export const lancamentosMaoObraApi = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('lancamentos_mao_obra')
+      .select('*')
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
   async getByObraId(obraId: string) {
     const { data, error } = await supabase
       .from('lancamentos_mao_obra')
@@ -825,6 +862,61 @@ export const materiaisSobraAplicacoesApi = {
   async delete(id: string) {
     const { error } = await supabase
       .from('materiais_sobra_aplicacoes')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+};
+
+// Caixa Empresa API
+export const caixaEmpresaApi = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('caixa_empresa_movimentos')
+      .select('*')
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async getAllByDateRange(startDate: string, endDate: string) {
+    const { data, error } = await supabase
+      .from('caixa_empresa_movimentos')
+      .select('*')
+      .gte('data', startDate)
+      .lte('data', endDate)
+      .order('data', { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  },
+
+  async create(movimento: Partial<CaixaEmpresaMovimento>) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('UsuÃ¡rio nÃ£o autenticado');
+
+    const { data, error } = await supabase
+      .from('caixa_empresa_movimentos')
+      .insert({ ...movimento, user_id: user.id })
+      .select('*')
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, movimento: Partial<CaixaEmpresaMovimento>) {
+    const { data, error } = await supabase
+      .from('caixa_empresa_movimentos')
+      .update(movimento)
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('caixa_empresa_movimentos')
       .delete()
       .eq('id', id);
     if (error) throw error;

@@ -207,9 +207,13 @@ export default function ObraDetailPage() {
   const materialCustos = custos.filter((c) => c.tipo === 'material_outros');
   const maoDeObraCustos = custos.filter((c) => c.tipo === 'mao_de_obra');
   const totalCustosMateriaisLegado = materialCustos.reduce((sum, c) => sum + Number(c.valor), 0);
+  const movimentosMateriais = movimentos.filter((mov) => mov.tipo === 'uso' || mov.tipo === 'sobra');
   const totalMateriaisMovimentos = movimentos
-    .filter((mov) => mov.tipo === 'uso')
-    .reduce((sum, mov) => sum + Number(mov.valor_total), 0);
+    .filter((mov) => mov.tipo === 'uso' || mov.tipo === 'sobra')
+    .reduce((sum, mov) => {
+      const sinal = mov.tipo === 'sobra' ? -1 : 1;
+      return sum + sinal * Number(mov.valor_total);
+    }, 0);
   const totalCustosMateriais = totalCustosMateriaisLegado + totalMateriaisMovimentos;
   const totalMaoObraLancamentos = alocacoes.length > 0
     ? 0
@@ -705,6 +709,11 @@ export default function ObraDetailPage() {
             {getStatusBadge(obra.status)}
           </div>
           <p className="text-sm text-muted-foreground">{obra.clientes?.nome}</p>
+          {obra.endereco && (
+            <p className="text-sm text-muted-foreground">
+              {t('clients.address')}: {obra.endereco}
+            </p>
+          )}
         </div>
         <Button variant="outline" size="icon" asChild>
           <Link to={`/obras/${id}/editar`}>
@@ -916,7 +925,7 @@ export default function ObraDetailPage() {
               <p className="text-sm text-muted-foreground">{t('financial.materialsHint')}</p>
             </CardHeader>
             <CardContent>
-              {movimentos.filter((mov) => mov.tipo === 'uso').length === 0 && materialCustos.length === 0 ? (
+              {movimentosMateriais.length === 0 && materialCustos.length === 0 ? (
                 <p className="text-center text-muted-foreground">{t('common.noData')}</p>
               ) : (
                 <Table>
@@ -929,17 +938,21 @@ export default function ObraDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {movimentos
-                      .filter((mov) => mov.tipo === 'uso')
-                      .map((mov) => {
+                    {movimentosMateriais.map((mov) => {
                         const material = materiais.find((item) => item.id === mov.material_id);
+                        const sinal = mov.tipo === 'sobra' ? -1 : 1;
+                        const quantidade = sinal * Number(mov.quantidade);
+                        const valor = sinal * Number(mov.valor_total);
+                        const descricao = mov.tipo === 'sobra'
+                          ? `${material?.nome || t('materials.title')} (${t('leftovers.title')})`
+                          : (material?.nome || t('materials.title'));
                         return (
                           <TableRow key={mov.id}>
                             <TableCell>{formatDateDisplay(mov.data)}</TableCell>
-                            <TableCell>{material?.nome || t('materials.title')}</TableCell>
-                            <TableCell className="text-right">{Number(mov.quantidade).toFixed(2)}</TableCell>
-                            <TableCell className="text-right font-semibold text-rose-600 dark:text-rose-400">
-                              ${Number(mov.valor_total).toFixed(2)}
+                            <TableCell>{descricao}</TableCell>
+                            <TableCell className="text-right">{quantidade.toFixed(2)}</TableCell>
+                            <TableCell className={`text-right font-semibold ${valor < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              ${valor.toFixed(2)}
                             </TableCell>
                           </TableRow>
                         );
@@ -1006,6 +1019,7 @@ export default function ObraDetailPage() {
                     id="alocacao_horas"
                     type="number"
                     step="0.5"
+                    min="0.5"
                     value={alocacaoForm.horas}
                     onChange={(e) => setAlocacaoForm({ ...alocacaoForm, horas: e.target.value })}
                     required
@@ -1119,6 +1133,7 @@ export default function ObraDetailPage() {
                   id="quantidade"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={itemForm.quantidade}
                   onChange={(e) => setItemForm({ ...itemForm, quantidade: e.target.value })}
                   required
@@ -1131,6 +1146,7 @@ export default function ObraDetailPage() {
                   id="valor_unitario"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={itemForm.valor_unitario}
                   onChange={(e) => setItemForm({ ...itemForm, valor_unitario: e.target.value })}
                   required
@@ -1161,6 +1177,7 @@ export default function ObraDetailPage() {
                 id="valor"
                 type="number"
                 step="0.01"
+                min="0"
                 value={receitaForm.valor}
                 onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })}
                 required
@@ -1224,6 +1241,7 @@ export default function ObraDetailPage() {
                 id="valor"
                 type="number"
                 step="0.01"
+                min="0"
                 value={custoForm.valor}
                 onChange={(e) => setCustoForm({ ...custoForm, valor: e.target.value })}
                 required
@@ -1317,6 +1335,7 @@ export default function ObraDetailPage() {
                       id="novo_material_preco"
                       type="number"
                       step="0.01"
+                      min="0"
                       value={materialCreateForm.preco_referencia}
                       onChange={(e) => setMaterialCreateForm({ ...materialCreateForm, preco_referencia: e.target.value })}
                       className="h-10"
@@ -1358,6 +1377,7 @@ export default function ObraDetailPage() {
                   id="material_quantidade"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={materialForm.quantidade}
                   onChange={(e) => setMaterialForm({ ...materialForm, quantidade: e.target.value })}
                   required
@@ -1446,6 +1466,7 @@ export default function ObraDetailPage() {
                 id="quantidade"
                 type="number"
                 step="0.01"
+                min="0"
                 value={lancamentoForm.quantidade}
                 onChange={(e) => setLancamentoForm({ ...lancamentoForm, quantidade: e.target.value })}
                 required

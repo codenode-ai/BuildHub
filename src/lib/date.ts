@@ -7,5 +7,9 @@ export const toLocalDateInput = (date: Date) => {
 export const formatDateDisplay = (value?: string) => {
   if (!value) return '';
   const date = value.includes('T') ? new Date(value) : new Date(`${value}T00:00:00`);
-  return date.toLocaleDateString();
+  return date.toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+  });
 };

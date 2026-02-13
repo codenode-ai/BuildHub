@@ -109,6 +109,19 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
         obra_origem_id: form.obra_origem_id,
         material_id: form.material_id,
       });
+      let movimentoObraOrigemId: string | undefined;
+      if (form.obra_origem_id) {
+        const movimentoOrigem = await materiaisMovimentosApi.create({
+          material_id: form.material_id,
+          tipo: 'sobra',
+          quantidade,
+          valor_total: valorTotal,
+          data: new Date().toISOString().split('T')[0],
+          observacao: 'Retorno de material ao estoque',
+          obra_id: form.obra_origem_id,
+        });
+        movimentoObraOrigemId = movimentoOrigem.id;
+      }
       const movimento = await materiaisMovimentosApi.create({
         material_id: form.material_id,
         tipo: 'ajuste',
@@ -118,7 +131,10 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
         observacao: form.obra_origem_id ? `Sobra da obra ${form.obra_origem_id}` : 'Sobra de material',
         obra_id: null,
       });
-      await materiaisSobraApi.update(sobraCriada.id, { movimento_estoque_id: movimento.id });
+      await materiaisSobraApi.update(sobraCriada.id, {
+        movimento_estoque_id: movimento.id,
+        movimento_obra_origem_id: movimentoObraOrigemId,
+      });
       toast({ title: 'Sucesso', description: t('messages.saveSuccess') });
       setCreateOpen(false);
       setForm({ quantidade: '', obra_origem_id: '', material_id: '' });
@@ -135,6 +151,9 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
       const sobra = materiais.find((item) => item.id === deleteId);
       if (sobra?.movimento_estoque_id) {
         await materiaisMovimentosApi.delete(sobra.movimento_estoque_id);
+      }
+      if (sobra?.movimento_obra_origem_id) {
+        await materiaisMovimentosApi.delete(sobra.movimento_obra_origem_id);
       }
       await materiaisSobraApi.delete(deleteId);
       toast({ title: 'Sucesso', description: t('messages.deleteSuccess') });
@@ -264,6 +283,7 @@ export function MateriaisSobraSection({ showHeader = true }: MateriaisSobraSecti
                   id="quantidade"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={form.quantidade}
                   onChange={(e) => setForm({ ...form, quantidade: e.target.value })}
                   required

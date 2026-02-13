@@ -284,6 +284,7 @@ export default function FuncionariosPage() {
                 id="valor"
                 type="number"
                 step="0.01"
+                min="0"
                 placeholder="Valor por hora"
                 value={formData.valor}
                 onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
