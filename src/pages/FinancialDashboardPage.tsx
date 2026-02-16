@@ -117,9 +117,11 @@ export default function FinancialDashboardPage() {
     }
   }, [startDate, endDate]);
 
-  const loadData = async () => {
+  const loadData = async (showGlobalLoading = true) => {
     try {
-      setLoading(true);
+      if (showGlobalLoading) {
+        setLoading(true);
+      }
       
       // Load all data
       const [finalizadas, funcionariosData, obrasData] = await Promise.all([
@@ -171,7 +173,9 @@ export default function FinancialDashboardPage() {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      if (showGlobalLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -368,7 +372,7 @@ export default function FinancialDashboardPage() {
       });
       setEditingCaixaId(null);
       toast({ title: 'Sucesso', description: t('messages.saveSuccess') });
-      loadData();
+      await loadData(false);
     } catch (error) {
       console.error('Erro ao salvar movimento de caixa da empresa:', error);
       toast({ title: 'Erro', description: t('messages.error'), variant: 'destructive' });
@@ -404,7 +408,7 @@ export default function FinancialDashboardPage() {
         cancelEditCaixa();
       }
       toast({ title: 'Sucesso', description: t('messages.deleteSuccess') });
-      loadData();
+      await loadData(false);
     } catch (error) {
       console.error('Erro ao excluir movimento de caixa da empresa:', error);
       toast({ title: 'Erro', description: t('messages.error'), variant: 'destructive' });
@@ -486,19 +490,6 @@ export default function FinancialDashboardPage() {
               ${totalCustos.toFixed(2)}
             </span>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Metrics */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('financial.companyCash')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-xs text-muted-foreground">{t('financial.companyCash')}</p>
-          <p className={`text-3xl font-bold ${saldoEmpresa >= 0 ? 'text-primary' : 'text-destructive'}`}>
-            ${saldoEmpresa.toFixed(2)}
-          </p>
         </CardContent>
       </Card>
 
@@ -593,21 +584,6 @@ export default function FinancialDashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('financial.companyExpenses')}</CardTitle>
-            <TrendingDown className="h-5 w-5 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-rose-600 dark:text-rose-400">
-              ${totalSaidasEmpresa.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {t('financial.companyMovements')}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('financial.completedProjects')}</CardTitle>
             <CheckCircle2 className="h-5 w-5 text-primary" />
           </CardHeader>
@@ -650,256 +626,6 @@ export default function FinancialDashboardPage() {
           </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('financial.companyMovements')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form onSubmit={handleCaixaSubmit} className="grid gap-4 xl:grid-cols-6">
-            <div className="space-y-2">
-              <Label htmlFor="caixa_tipo">{t('financial.companyType')}</Label>
-              <select
-                id="caixa_tipo"
-                value={caixaForm.tipo}
-                onChange={(e) => setCaixaForm((prev) => ({ ...prev, tipo: e.target.value as TipoMovimentoCaixaEmpresa }))}
-                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="entrada">{t('financial.companyEntry')}</option>
-                <option value="saida">{t('financial.companyExit')}</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="caixa_categoria">{t('financial.companyCategory')}</Label>
-              <select
-                id="caixa_categoria"
-                value={caixaForm.categoria}
-                onChange={(e) => setCaixaForm((prev) => ({ ...prev, categoria: e.target.value as CategoriaMovimentoCaixaEmpresa }))}
-                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="aporte">{t('financial.companyCategoryAporte')}</option>
-                <option value="despesa_empresa">{t('financial.companyCategoryExpense')}</option>
-                <option value="prolabore">{t('financial.companyCategoryProlabore')}</option>
-                <option value="retirada_dono">{t('financial.companyCategoryOwnerWithdrawal')}</option>
-                <option value="outros">{t('financial.companyCategoryOther')}</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="caixa_data">{t('common.date')}</Label>
-              <Input
-                id="caixa_data"
-                type="date"
-                value={caixaForm.data}
-                onChange={(e) => setCaixaForm((prev) => ({ ...prev, data: e.target.value }))}
-                className="h-12"
-                required
-              />
-            </div>
-            <div className="space-y-2 xl:col-span-2">
-              <Label htmlFor="caixa_descricao">{t('common.description')}</Label>
-              <Input
-                id="caixa_descricao"
-                value={caixaForm.descricao}
-                onChange={(e) => setCaixaForm((prev) => ({ ...prev, descricao: e.target.value }))}
-                className="h-12"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="caixa_valor">{t('common.value')}</Label>
-              <Input
-                id="caixa_valor"
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={caixaForm.valor}
-                onChange={(e) => setCaixaForm((prev) => ({ ...prev, valor: e.target.value }))}
-                className="h-12"
-                required
-              />
-            </div>
-            <div className="space-y-2 xl:col-span-3">
-              <Label htmlFor="caixa_categoria_filtro">{t('common.filter')}</Label>
-              <select
-                id="caixa_categoria_filtro"
-                value={caixaCategoriaFiltro}
-                onChange={(e) => setCaixaCategoriaFiltro(e.target.value as 'todos' | CategoriaMovimentoCaixaEmpresa)}
-                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="todos">{t('financial.filterTypeAll')}</option>
-                <option value="aporte">{t('financial.companyCategoryAporte')}</option>
-                <option value="despesa_empresa">{t('financial.companyCategoryExpense')}</option>
-                <option value="prolabore">{t('financial.companyCategoryProlabore')}</option>
-                <option value="retirada_dono">{t('financial.companyCategoryOwnerWithdrawal')}</option>
-                <option value="outros">{t('financial.companyCategoryOther')}</option>
-              </select>
-            </div>
-            <div className="xl:col-span-3 flex gap-2 justify-end">
-              {editingCaixaId && (
-                <Button type="button" variant="outline" className="h-12" onClick={cancelEditCaixa}>
-                  {t('common.cancel')}
-                </Button>
-              )}
-              <Button type="submit" className="h-12 min-w-32">
-                {editingCaixaId ? t('common.edit') : t('common.save')}
-              </Button>
-            </div>
-          </form>
-
-          {caixaEmpresaFiltrado.length === 0 ? (
-            <p className="text-center text-muted-foreground">{t('common.noData')}</p>
-          ) : (
-            <div className="space-y-2">
-              {caixaEmpresaFiltrado.slice(0, 8).map((mov) => {
-                const valor = Number(mov.valor);
-                const negativo = mov.tipo === 'saida';
-                return (
-                  <div key={mov.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
-                      <div>
-                        <p className="font-medium">
-                          {mov.descricao || getCategoriaLabel(mov.categoria)}
-                        </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDateDisplay(mov.data)} - {getCategoriaLabel(mov.categoria)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`font-semibold ${negativo ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                        {negativo ? '-' : '+'}${valor.toFixed(2)}
-                      </span>
-                      <Button type="button" variant="ghost" size="icon" onClick={() => startEditCaixa(mov)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button type="button" variant="ghost" size="icon" onClick={() => setDeleteCaixaId(mov.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={caixaDialogOpen} onOpenChange={setCaixaDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t('financial.companyMovements')}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid gap-4 xl:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="caixa_dialog_categoria">{t('financial.companyCategory')}</Label>
-                <select
-                  id="caixa_dialog_categoria"
-                  value={caixaCategoriaFiltro}
-                  onChange={(e) => {
-                    setCaixaCategoriaFiltro(e.target.value as 'todos' | CategoriaMovimentoCaixaEmpresa);
-                    setCaixaPage(1);
-                  }}
-                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="todos">{t('financial.filterTypeAll')}</option>
-                  <option value="aporte">{t('financial.companyCategoryAporte')}</option>
-                  <option value="despesa_empresa">{t('financial.companyCategoryExpense')}</option>
-                  <option value="prolabore">{t('financial.companyCategoryProlabore')}</option>
-                  <option value="retirada_dono">{t('financial.companyCategoryOwnerWithdrawal')}</option>
-                  <option value="outros">{t('financial.companyCategoryOther')}</option>
-                </select>
-              </div>
-              <div className="flex items-end justify-end">
-                <div className="rounded-md border border-border bg-muted/40 px-4 py-2 text-sm">
-                  <span className="text-muted-foreground">{t('common.total')}:</span>{' '}
-                  <span className="font-semibold">
-                    {caixaEmpresaFiltrado.length}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {caixaEmpresaPagina.length === 0 ? (
-              <p className="text-center text-muted-foreground">{t('common.noData')}</p>
-            ) : (
-              <div className="max-h-[360px] space-y-2 overflow-y-auto pr-2">
-                {caixaEmpresaPagina.map((mov) => {
-                  const valor = Number(mov.valor);
-                  const negativo = mov.tipo === 'saida';
-                  return (
-                    <div key={mov.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
-                      <div>
-                        <p className="font-medium">{mov.descricao || getCategoriaLabel(mov.categoria)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDateDisplay(mov.data)} - {getCategoriaLabel(mov.categoria)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold ${negativo ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                          {negativo ? '-' : '+'}${valor.toFixed(2)}
-                        </span>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => {
-                          startEditCaixa(mov);
-                          setCaixaDialogOpen(false);
-                        }}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => setDeleteCaixaId(mov.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            <div className="flex items-center justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={caixaPageSafe <= 1}
-                onClick={() => setCaixaPage((prev) => Math.max(1, prev - 1))}
-              >
-                {'<'}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                {caixaPageSafe}/{caixaTotalPages}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={caixaPageSafe >= caixaTotalPages}
-                onClick={() => setCaixaPage((prev) => Math.min(caixaTotalPages, prev + 1))}
-              >
-                {'>'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!deleteCaixaId} onOpenChange={() => setDeleteCaixaId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('common.confirm')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('financial.deleteCompanyMovementConfirm')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deleteCaixaId) {
-                  handleDeleteCaixa(deleteCaixaId);
-                }
-                setDeleteCaixaId(null);
-              }}
-            >
-              {t('common.delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Breakdown */}
       <div className="grid gap-4 xl:grid-cols-2">
@@ -1028,6 +754,281 @@ export default function FinancialDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('financial.companyMovements')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleCaixaSubmit} className="grid gap-4 xl:grid-cols-6">
+            <div className="space-y-2">
+              <Label htmlFor="caixa_tipo">{t('financial.companyType')}</Label>
+              <select
+                id="caixa_tipo"
+                value={caixaForm.tipo}
+                onChange={(e) => {
+                  const nextTipo = e.target.value as TipoMovimentoCaixaEmpresa;
+                  setCaixaForm((prev) => ({
+                    ...prev,
+                    tipo: nextTipo,
+                    categoria:
+                      nextTipo === 'entrada'
+                        ? 'aporte'
+                        : prev.categoria === 'aporte'
+                          ? 'retirada_dono'
+                          : prev.categoria,
+                  }));
+                }}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="entrada">{t('financial.companyEntry')}</option>
+                <option value="saida">{t('financial.companyExit')}</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="caixa_categoria">{t('financial.companyCategory')}</Label>
+              <select
+                id="caixa_categoria"
+                value={caixaForm.categoria}
+                onChange={(e) => setCaixaForm((prev) => ({ ...prev, categoria: e.target.value as CategoriaMovimentoCaixaEmpresa }))}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="aporte">{t('financial.companyCategoryAporte')}</option>
+                <option value="despesa_empresa">{t('financial.companyCategoryExpense')}</option>
+                <option value="prolabore">{t('financial.companyCategoryProlabore')}</option>
+                <option value="retirada_dono">{t('financial.companyCategoryOwnerWithdrawal')}</option>
+                <option value="outros">{t('financial.companyCategoryOther')}</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="caixa_data">{t('common.date')}</Label>
+              <Input
+                id="caixa_data"
+                type="date"
+                value={caixaForm.data}
+                onChange={(e) => setCaixaForm((prev) => ({ ...prev, data: e.target.value }))}
+                className="h-12"
+                required
+              />
+            </div>
+            <div className="space-y-2 xl:col-span-2">
+              <Label htmlFor="caixa_descricao">{t('common.description')}</Label>
+              <Input
+                id="caixa_descricao"
+                value={caixaForm.descricao}
+                onChange={(e) => setCaixaForm((prev) => ({ ...prev, descricao: e.target.value }))}
+                className="h-12"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="caixa_valor">{t('common.value')}</Label>
+              <Input
+                id="caixa_valor"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={caixaForm.valor}
+                onChange={(e) => setCaixaForm((prev) => ({ ...prev, valor: e.target.value }))}
+                className="h-12"
+                required
+              />
+            </div>
+            <div className="space-y-2 xl:col-span-3">
+              <Label htmlFor="caixa_categoria_filtro">{t('common.filter')}</Label>
+              <select
+                id="caixa_categoria_filtro"
+                value={caixaCategoriaFiltro}
+                onChange={(e) => setCaixaCategoriaFiltro(e.target.value as 'todos' | CategoriaMovimentoCaixaEmpresa)}
+                className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="todos">{t('financial.filterTypeAll')}</option>
+                <option value="aporte">{t('financial.companyCategoryAporte')}</option>
+                <option value="despesa_empresa">{t('financial.companyCategoryExpense')}</option>
+                <option value="prolabore">{t('financial.companyCategoryProlabore')}</option>
+                <option value="retirada_dono">{t('financial.companyCategoryOwnerWithdrawal')}</option>
+                <option value="outros">{t('financial.companyCategoryOther')}</option>
+              </select>
+            </div>
+            <div className="xl:col-span-3 flex gap-2 justify-end">
+              {editingCaixaId && (
+                <Button type="button" variant="outline" className="h-12" onClick={cancelEditCaixa}>
+                  {t('common.cancel')}
+                </Button>
+              )}
+              <Button type="submit" className="h-12 min-w-32">
+                {editingCaixaId ? t('common.edit') : t('common.save')}
+              </Button>
+            </div>
+          </form>
+
+          {caixaEmpresaFiltrado.length === 0 ? (
+            <p className="text-center text-muted-foreground">{t('common.noData')}</p>
+          ) : (
+            <div className="space-y-2">
+              {caixaEmpresaFiltrado.slice(0, 8).map((mov) => {
+                const valor = Number(mov.valor);
+                const negativo = mov.tipo === 'saida';
+                return (
+                  <div key={mov.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
+                      <div>
+                        <p className="font-medium">
+                          {mov.descricao || getCategoriaLabel(mov.categoria)}
+                        </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDateDisplay(mov.data)} - {getCategoriaLabel(mov.categoria)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`font-semibold ${negativo ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        {negativo ? '-' : '+'}${valor.toFixed(2)}
+                      </span>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => startEditCaixa(mov)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => setDeleteCaixaId(mov.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('financial.companyCash')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground">{t('financial.companyCash')}</p>
+          <p className={`text-3xl font-bold ${saldoEmpresa >= 0 ? 'text-primary' : 'text-destructive'}`}>
+            ${saldoEmpresa.toFixed(2)}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{t('financial.companyCashNoPeriodFilter')}</p>
+        </CardContent>
+      </Card>
+
+      <Dialog open={caixaDialogOpen} onOpenChange={setCaixaDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('financial.companyMovements')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4 xl:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="caixa_dialog_categoria">{t('financial.companyCategory')}</Label>
+                <select
+                  id="caixa_dialog_categoria"
+                  value={caixaCategoriaFiltro}
+                  onChange={(e) => {
+                    setCaixaCategoriaFiltro(e.target.value as 'todos' | CategoriaMovimentoCaixaEmpresa);
+                    setCaixaPage(1);
+                  }}
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="todos">{t('financial.filterTypeAll')}</option>
+                  <option value="aporte">{t('financial.companyCategoryAporte')}</option>
+                  <option value="despesa_empresa">{t('financial.companyCategoryExpense')}</option>
+                  <option value="prolabore">{t('financial.companyCategoryProlabore')}</option>
+                  <option value="retirada_dono">{t('financial.companyCategoryOwnerWithdrawal')}</option>
+                  <option value="outros">{t('financial.companyCategoryOther')}</option>
+                </select>
+              </div>
+              <div className="flex items-end justify-end">
+                <div className="rounded-md border border-border bg-muted/40 px-4 py-2 text-sm">
+                  <span className="text-muted-foreground">{t('common.total')}:</span>{' '}
+                  <span className="font-semibold">
+                    {caixaEmpresaFiltrado.length}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {caixaEmpresaPagina.length === 0 ? (
+              <p className="text-center text-muted-foreground">{t('common.noData')}</p>
+            ) : (
+              <div className="max-h-[360px] space-y-2 overflow-y-auto pr-2">
+                {caixaEmpresaPagina.map((mov) => {
+                  const valor = Number(mov.valor);
+                  const negativo = mov.tipo === 'saida';
+                  return (
+                    <div key={mov.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
+                      <div>
+                        <p className="font-medium">{mov.descricao || getCategoriaLabel(mov.categoria)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDateDisplay(mov.data)} - {getCategoriaLabel(mov.categoria)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-semibold ${negativo ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          {negativo ? '-' : '+'}${valor.toFixed(2)}
+                        </span>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => {
+                          startEditCaixa(mov);
+                          setCaixaDialogOpen(false);
+                        }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => setDeleteCaixaId(mov.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={caixaPageSafe <= 1}
+                onClick={() => setCaixaPage((prev) => Math.max(1, prev - 1))}
+              >
+                {'<'}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                {caixaPageSafe}/{caixaTotalPages}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={caixaPageSafe >= caixaTotalPages}
+                onClick={() => setCaixaPage((prev) => Math.min(caixaTotalPages, prev + 1))}
+              >
+                {'>'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteCaixaId} onOpenChange={() => setDeleteCaixaId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('common.confirm')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('financial.deleteCompanyMovementConfirm')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteCaixaId) {
+                  handleDeleteCaixa(deleteCaixaId);
+                }
+                setDeleteCaixaId(null);
+              }}
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={receitasDialogOpen} onOpenChange={setReceitasDialogOpen}>
         <DialogContent className="max-w-2xl">
