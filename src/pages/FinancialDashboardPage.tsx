@@ -495,26 +495,10 @@ export default function FinancialDashboardPage() {
           <CardTitle>{t('financial.companyCash')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 xl:grid-cols-3">
-            <div>
-              <p className="text-xs text-muted-foreground">{t('financial.companyCash')}</p>
-              <p className={`text-2xl font-bold ${saldoEmpresa >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                ${saldoEmpresa.toFixed(2)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">{t('financial.companyEntries')}</p>
-              <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
-                ${totalEntradasEmpresaHistorico.toFixed(2)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">{t('financial.companyExpenses')}</p>
-              <p className="text-xl font-semibold text-rose-600 dark:text-rose-400">
-                ${totalSaidasEmpresaHistorico.toFixed(2)}
-              </p>
-            </div>
-          </div>
+          <p className="text-xs text-muted-foreground">{t('financial.companyCash')}</p>
+          <p className={`text-3xl font-bold ${saldoEmpresa >= 0 ? 'text-primary' : 'text-destructive'}`}>
+            ${saldoEmpresa.toFixed(2)}
+          </p>
         </CardContent>
       </Card>
 
@@ -669,21 +653,7 @@ export default function FinancialDashboardPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>{t('financial.companyMovements')}</CardTitle>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setCaixaCategoriaFiltro('todos');
-                setCaixaPage(1);
-                setCaixaDialogOpen(true);
-              }}
-            >
-              {t('financial.viewAll')}
-            </Button>
-          </div>
+          <CardTitle>{t('financial.companyMovements')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleCaixaSubmit} className="grid gap-4 xl:grid-cols-6">
